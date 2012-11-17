@@ -23,9 +23,9 @@ class BaseEnviromnetTest(unittest.TestCase):
         self.assertFalse(pathname in sys.path)
 
 
-class DefaultSitelibTest(unittest.TestCase):
+class LibraryEnvironmentTest(unittest.TestCase):
     """
-    Assert import paths work with default
+    Assert import paths work with given
     `sitelib` named directory.
     """
 
