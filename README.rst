@@ -3,7 +3,8 @@ ipyenv
 
 ipyenv is a simple and poor environment supplyer for Python development
 in the most restrictive environments, such as lacking virtualenv or nose.
-And still you don't want to use pip or easy_install in the global context!
+And still you don't want to use pip, easy_install or setup.py in the global
+context!
 
 It provides an import path environment(instead of providing a comprehensive
 environment like virtualenv), with a simple test finder & runner.
@@ -38,11 +39,12 @@ project root.::
         |   `-- test_mod_inner.py
         `-- test_mod_top.py
 
-Remember you can just copy `ipyenv.py` to your project to apply it (We.
+Remember you can just copy `ipyenv.py` to your project to apply it (we
+assume that you can access no library management tools or libraries).
 
 Configure `.sitelibs` under `sitelib` directory for your favorite modules
-or packages.  Just write up a relative path per line in `.sitelibs`, *FROM
-WHICH YOU CAN IMPORT* ones (NOT the packege root dirs, etc.).
+or packages.  Just write up a relative path (to `sitelib` dir.) per line in
+`.sitelibs`, *FROM WHICH YOU CAN IMPORT* ones (NOT the packege root dirs, etc.).
 For this project it would be like::
 
     ./
@@ -56,8 +58,10 @@ imports `package.mod_top`, you can do as::
     (ipyenv interactive shell)
     >>> import your_favorite_package
     >>>    # OK!
+    >>> from package import mod_top
+    >>>    # OK!
 
-or::
+and also::
 
    $ ipy ipyenv.py exec runner_script.py
    
@@ -92,3 +96,6 @@ or::
     $ ipy ipyenv.py shell -h
 
 etc.
+
+Additionally we recommend that you let your VCS ignore `setup.py` and `/sitelib/*`
+except `.sitelibs` :).
