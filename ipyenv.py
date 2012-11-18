@@ -5,6 +5,15 @@ import os
 import re
 import subprocess
 import logging
+import argparse
+
+
+__all__ = [
+    'PathEnvironment',
+    'LibraryEnvironment',
+    'TestProxy',
+    'TestRunner',
+]
 
 
 # Config logger.
@@ -209,3 +218,46 @@ class TestRunner(object):
                     return
             # If the path not found.
             logging.error('test not found: {}'.format(abs_testfile_path))
+
+
+def shell():
+    """Make an interactive shell with given extension paths."""
+    # CLI configs.
+    parser = argparse.ArgumentParser(description='ipyenv: shell with a supplied environment')
+    parser.add_argument('shell') # ignore this.
+    parser.add_argument('-l', '--libext', metavar='Library extension paths', nargs='*')
+    parser.add_argument('-e', '--encoding', metavar='.sitelibs file encoding')
+    args = parser.parse_args()
+    # Invoke a shell.
+    kwargs = {}
+    if args.libext:
+        kwargs['sitelib_paths'] = args.libext
+    if args.encoding:
+        kwargs['rcfile_encoding'] = args.encoding
+    import code
+    with LibraryEnvironment(**kwargs):
+        ic = code.InteractiveConsole()
+        try:
+            ic.interact('(ipyenv interactive shell)')
+        except SystemExit as ex:
+            print('(Terminate ipyenv shell)')
+
+
+if __name__ == '__main__':
+    # Command-line interfaces.
+    parser = argparse.ArgumentParser(description='ipyenv: a simple and poor environment supplyer for Python development')
+    # Action routings.
+    actions = (
+        'shell',
+        'exec',
+        'test',
+    )
+    action_funcs = {
+        'shell': shell,
+    }
+    parser.add_argument('action',
+                        metavar='ACTION: ( {} )'.format(', '.join(actions)),
+                        choices=actions)
+    # Parse & execute.
+    args = parser.parse_args(sys.argv[1:2])
+    action_funcs[args.action]()
