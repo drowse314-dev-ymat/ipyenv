@@ -119,14 +119,16 @@ class TestProxy(object):
 # encoding: utf-8
 import ipyenv
 import os
+import sys
+target = '{target_filepath}'
+sys.argv = [target.split(os.sep)[-1]]
 test_env = ipyenv.PathEnvironment(ext_paths={ext_paths})
 with test_env as te:
-    import sys
     try:
-        execfile('{target_filepath}')
+        execfile(target)
     except NameError:
-        exec(compile(open('{target_filepath}').read(),
-                     '{target_filepath}', 'exec'))
+        exec(compile(open(target).read(),
+                     target, 'exec'))
 """
     )
 
@@ -138,7 +140,7 @@ with test_env as te:
         self._target = target_filepath.split(os.sep)[-1]
 
     def __enter__(self):
-        proxy_name = '.' + self._target + '.proxy'
+        proxy_name = '.' + self._target + '.testproxy'
         while os.path.exists(proxy_name):
             proxy_name += '.temp'
         proxy_name = os.path.abspath(proxy_name)
