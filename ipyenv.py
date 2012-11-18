@@ -113,7 +113,11 @@ import os
 test_env = ipyenv.PathEnvironment(ext_paths={ext_paths})
 with test_env as te:
     import sys
-    execfile('{target_filepath}')
+    try:
+        execfile('{target_filepath}')
+    except NameError:
+        exec(compile(open('{target_filepath}').read(),
+                     '{target_filepath}', 'exec'))
 """
     )
 
@@ -130,7 +134,7 @@ with test_env as te:
             proxy_name += '.temp'
         proxy_name = os.path.abspath(proxy_name)
         with open(proxy_name, 'wb') as proxy:
-            proxy.write(self._script)
+            proxy.write(self._script.encode('utf-8'))
         self._proxy_name = proxy_name
         return proxy_name
 

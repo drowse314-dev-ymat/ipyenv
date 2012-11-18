@@ -6,7 +6,8 @@ import os
 
 
 # Add project root path for our module.
-sys.path.append(os.path.realpath('../'))
+sys.path.append(os.path.abspath('../')) # works well in IronPython.
+sys.path.append(os.path.abspath('.'))   # works well in the others.
 import ipyenv
 
 
