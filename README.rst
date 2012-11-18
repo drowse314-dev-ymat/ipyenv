@@ -70,7 +70,7 @@ Usage: Test environment
 
 Suppose the same project source tree.
 
-Configure `.testfor` under `tests` directory.  Similarly to `/.sitelibs`,
+Configure `.testfor` under `tests` directory.  Similarly to `.sitelibs`,
 write up a relative path per line *FROM WHICH YOU CAN IMPORT* modules/packages
 the tests want to import for testing.  For this project it would be simply like::
 
