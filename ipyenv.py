@@ -15,6 +15,8 @@ __all__ = [
     'TestRunner',
 ]
 
+__version__ = 0.1
+
 
 # Config logger.
 logging.basicConfig(format='ipyenv(%(levelname)s): %(message)s',
@@ -225,7 +227,9 @@ class TestRunner(object):
 def shell():
     """Make an interactive shell with given extension paths."""
     # CLI configs.
-    parser = argparse.ArgumentParser(description='ipyenv: shell with a supplied environment')
+    parser = argparse.ArgumentParser(
+        description='ipyenv v{}: shell with a supplied environment'.format(__version__)
+    )
     parser.add_argument('shell') # ignore this.
     parser.add_argument('-l', '--libext', metavar='Library extension paths', nargs='*')
     parser.add_argument('-e', '--encoding', metavar='.sitelibs file encoding')
@@ -247,7 +251,9 @@ def shell():
 def execute():
     """Execute a script with given extension paths."""
     # CLI configs.
-    parser = argparse.ArgumentParser(description='ipyenv: execute scripts with a supplied environment')
+    parser = argparse.ArgumentParser(
+        description='ipyenv v{}: execute scripts with a supplied environment'.format(__version__)
+    )
     parser.add_argument('exec') # ignore this.
     parser.add_argument('target_script')
     parser.add_argument('-l', '--libext', metavar='Library extension paths', nargs='*')
@@ -274,7 +280,9 @@ def execute():
 def test():
     """Execute tests with given extension paths."""
     # CLI configs.
-    parser = argparse.ArgumentParser(description='ipyenv: execute tests with a supplied environment')
+    parser = argparse.ArgumentParser(
+        description='ipyenv v{}: Execute tests with a supplied environment'.format(__version__)
+    )
     parser.add_argument('test') # ignore this.
     parser.add_argument('-n', '--name', metavar='target test script name/path')
     parser.add_argument('-t', '--testdir', metavar='target test directory paths', nargs='*')
@@ -298,7 +306,9 @@ def test():
 
 if __name__ == '__main__':
     # Command-line interfaces.
-    parser = argparse.ArgumentParser(description='ipyenv: a simple and poor environment supplyer for Python development')
+    parser = argparse.ArgumentParser(
+        description='ipyenv v{}: A simple and poor environment supplyer for Python development'.format(__version__)
+    )
     # Action routings.
     actions = (
         'shell',
