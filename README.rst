@@ -1,0 +1,94 @@
+ipyenv
+~~~~~~
+
+ipyenv is a simple and poor environment supplyer for Python development
+in the most restrictive environments, such as lacking virtualenv or nose.
+And still you don't want to use pip or easy_install in the global context!
+
+It provides an import path environment(instead of providing a comprehensive
+environment like virtualenv), with a simple test finder & runner.
+
+Though the main target would be IronPython, it also works with CPython.
+All written in pure Python!
+
+Usage: Library environment
+--------------------------
+
+Suppose you have your source tree below, and put `ipyenv.py` on the
+project root.::
+
+    project/
+    |-- ipyenv.py
+    |-- runner_script.py
+    |-- package
+    |   |-- __init__.py
+    |   |-- mod_top.py
+    |   `-- subpkg
+    |       |-- __init__.py
+    |       `-- mod_inner.py
+    |-- sitelib
+    |   |-- .sitelibs
+    |   |-- package_wrapping_dir
+    |   |   `-- ...
+    |   `-- your_favorite_package
+    |       `-- ...
+    `-- tests
+        |-- .testfor
+        |-- sub
+        |   `-- test_mod_inner.py
+        `-- test_mod_top.py
+
+Remember you can just copy `ipyenv.py` to your project to apply it (We.
+
+Configure `.sitelibs` under `sitelib` directory for your favorite modules
+or packages.  Just write up a relative path per line in `.sitelibs`, *FROM
+WHICH YOU CAN IMPORT* ones (NOT the packege root dirs, etc.).
+For this project it would be like::
+
+    ./
+    ./package_wrapping_dir
+
+After this, you can import everything in `sitelib` through ipyenv.py.
+Suppose `package.mod_top` imports one of these, then `runner_script.py`
+imports `package.mod_top`, you can do as::
+
+    $ ipy ipyenv.py shell
+    (ipyenv interactive shell)
+    >>> import your_favorite_package
+    >>>    # OK!
+
+or::
+
+   $ ipy ipyenv.py exec runner_script.py
+   
+Usage: Test environment
+-----------------------
+
+Suppose the same project source tree.
+
+Configure `.testfor` under `tests` directory.  Similarly to `/.sitelibs`,
+write up a relative path per line *FROM WHICH YOU CAN IMPORT* modules/packages
+the tests want to import for testing.  For this project it would be simply like::
+
+    ../
+
+Then you can execute all tests with::
+
+    $ ipy ipyenv.py test
+
+or with a test script path::
+
+    $ ipy ipyenv.py test -n tests/test_mod_top.py
+
+Further information
+-------------------
+
+Please type like::
+
+    $ ipy ipyenv.py -h
+
+or::
+
+    $ ipy ipyenv.py shell -h
+
+etc.
