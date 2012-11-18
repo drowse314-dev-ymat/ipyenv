@@ -33,9 +33,9 @@ class PathEnvironment(object):
         return self._ext_paths
 
 
-def _find_sitelibrc(sitelib_abspath):
-    """Find .sitelibrc path in given directory."""
-    rcfile_path = os.sep.join((sitelib_abspath, '.sitelibs'))
+def _find_rc(extdir_abspath, rc_filename):
+    """Find rc path in given directory."""
+    rcfile_path = os.sep.join((extdir_abspath, rc_filename))
     if not (os.path.exists(rcfile_path) and os.path.isfile(rcfile_path)):
         return None
     return rcfile_path
@@ -43,28 +43,29 @@ def _find_sitelibrc(sitelib_abspath):
 # Regular exp. for newline characters.
 RE_NEWLINES = re.compile('[(?:\n)(?:\r\n)(?:\r)]+')
 
-def _resolve_rcpath(path_repr, sitelib_dir_path):
+def _resolve_rcpath(path_repr, extdir_abspath):
     path_repr = RE_NEWLINES.sub('', path_repr)
     path_repr = path_repr.replace('/', os.sep)
-    return os.sep.join((sitelib_dir_path, path_repr))
+    cat_path = os.sep.join((extdir_abspath, path_repr))
+    return os.path.abspath(cat_path)
 
-def _load_sitelib(sitelib_dir, rcfile_encoding):
-    """Load .sitelibs rc file & extract library paths to extend."""
-    if not (os.path.exists(sitelib_dir) and os.path.isdir(sitelib_dir)):
-        logging.error('sitelib directory "{}" not found'.format(sitelib_dir))
+def _load_extdir(ext_dir, rcfile_encoding, rc_filename):
+    """Load rc file & extract import paths to extend."""
+    if not (os.path.exists(ext_dir) and os.path.isdir(ext_dir)):
+        logging.error('extension directory "{}" not found'.format(ext_dir))
         return []
-    sitelib_dir = os.path.realpath(sitelib_dir)
-    # Get .sitelibs.
-    rcfile_path = _find_sitelibrc(sitelib_dir)
+    ext_dir = os.path.abspath(ext_dir)
+    # Get rc.
+    rcfile_path = _find_rc(ext_dir, rc_filename)
     if rcfile_path is None:
-        logging.error('.sitelibs in "{}" not found'.format(sitelib_dir))
+        logging.error('{} in "{}" not found'.format(rc_filename, ext_dir))
         return []
-    # Read out .sitelibs.
+    # Read out rc.
     library_paths = []
     with open(rcfile_path, 'rb') as rcfile:
         for line in rcfile:
             library_paths.append(_resolve_rcpath(line.decode(rcfile_encoding),
-                                                 sitelib_dir))
+                                                 ext_dir))
     return list(set(library_paths))
 
 
@@ -77,5 +78,5 @@ class LibraryEnvironment(PathEnvironment):
         # Load .sitelib files.
         library_paths = []
         for sitelib_dir in sitelib_paths:
-            library_paths.extend(_load_sitelib(sitelib_dir, rcfile_encoding))
+            library_paths.extend(_load_extdir(sitelib_dir, rcfile_encoding, '.sitelibs'))
         PathEnvironment.__init__(self, library_paths)
