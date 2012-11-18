@@ -74,7 +74,8 @@ def _load_extdir(ext_dir, rcfile_encoding, rc_filename):
 class LibraryEnvironment(PathEnvironment):
     """
     Context manager for appending on the fly
-    modules/packeges import paths."""
+    modules/packeges import paths.
+    """
 
     def __init__(self, sitelib_paths=('./sitelib',), rcfile_encoding='utf-8'):
         # Load .sitelib files.
