@@ -3,6 +3,7 @@
 import sys
 import os
 import re
+import subprocess
 import logging
 
 
@@ -80,3 +81,125 @@ class LibraryEnvironment(PathEnvironment):
         for sitelib_dir in sitelib_paths:
             library_paths.extend(_load_extdir(sitelib_dir, rcfile_encoding, '.sitelibs'))
         PathEnvironment.__init__(self, library_paths)
+
+
+# Test script filename patterns.
+RE_TEST_SCRIPT_NAME = re.compile('^[Tt]est.*')
+
+def _find_tests(test_dir):
+    """Find recursively test scripts under the given path."""
+    test_paths = []
+    for root, dirs, files in os.walk(test_dir):
+        for filename in files:
+            if RE_TEST_SCRIPT_NAME.search(filename):
+                test_paths.append(os.sep.join((root, filename)))
+    return test_paths
+
+
+class TestProxy(object):
+    """
+    Context manager for creating execution proxy script
+    for isolated test environment.
+    """
+
+    # Script format to create on the fly.
+    TEST_PROXY_FORMAT = (
+        """
+# encoding: utf-8
+import ipyenv
+import os
+test_env = ipyenv.PathEnvironment(ext_paths={ext_paths})
+with test_env as te:
+    import sys
+    execfile('{target_filepath}')
+"""
+    )
+
+    def __init__(self, target_filepath, ext_paths=tuple()):
+        # All paths are desired to be absolute.
+        ext_paths = [path for path in ext_paths]  # accept iterator, etc.
+        self._script = self.TEST_PROXY_FORMAT.format(ext_paths=ext_paths,
+                                                     target_filepath=target_filepath)
+        self._target = target_filepath.split(os.sep)[-1]
+
+    def __enter__(self):
+        proxy_name = '.' + self._target + '.proxy'
+        while os.path.exists(proxy_name):
+            proxy_name += '.temp'
+        proxy_name = os.path.abspath(proxy_name)
+        with open(proxy_name, 'wb') as proxy:
+            proxy.write(self._script)
+        self._proxy_name = proxy_name
+        return proxy_name
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        os.remove(self._proxy_name)
+
+
+def _escape_path(path):
+    """Path separator escaping in Windows."""
+    return path.replace('\\', '\\\\')
+
+def _execute_test(testfile_path, ext_paths=tuple()):
+    """
+    Execute test script, with invoking executable
+    & given path sextension by subprocessing.
+    """
+    logging.info('will execute test: {}'.format(testfile_path))
+    ext_paths = [path for path in ext_paths]  # accept iterator, etc.
+    # `_escape_path` only applied to  `testfile_path`:
+    #     Built-in `open` never accepts unescaped special characters,
+    #     while a sequence of `list.__repr__` -> `str.format` does.
+    with TestProxy(_escape_path(testfile_path),
+                   ext_paths=ext_paths) as proxy_filename:
+        subprocess.call([sys.executable, proxy_filename])
+
+
+class TestRunner(object):
+    """
+    Implements test runner functionality.
+    Uses PathEnvironment as environment supplyer.
+    """
+
+    def __init__(self, test_paths=('./tests',), sitelib_paths=('./sitelib',),
+                 rcfile_encoding='utf-8'):
+        # Extend common library pahts.
+        self._library_paths = []
+        for sitelib_dir in sitelib_paths:
+            self._library_paths.extend(_load_extdir(sitelib_dir, rcfile_encoding, '.sitelibs'))
+        # Find tests with extension config. recursively.
+        self._tests = {}        # context => tests
+        self._ext_paths = {}    # context => extension paths(test target paths)
+        for test_dir in test_paths:
+            if not (os.path.exists(test_dir) and os.path.isdir(test_dir)):
+                logging.error('tests directory "{}" not found'.format(test_dir))
+                continue
+            test_dir = os.path.abspath(test_dir)
+            self._tests[test_dir] = _find_tests(test_dir)
+            self._ext_paths[test_dir] = _load_extdir(test_dir, rcfile_encoding, '.testfor')
+
+    def execute_all(self):
+        """Execute all tests found."""
+        library_paths = self._library_paths
+        for context, tests in self._tests.items():
+            # Setup full extension paths set.
+            ext_paths = self._ext_paths[context]
+            ext_paths.extend(library_paths)
+            # Iterate over tests.
+            for testfile_path in tests:
+                _execute_test(testfile_path, ext_paths=ext_paths)
+
+    def execute_by_path(self, testfile_path):
+        """Execute a specifiv test by given path."""
+        abs_testfile_path = os.path.abspath(testfile_path)
+        for context, tests in self._tests.items():
+            # Find given path.
+            for test_path in tests:
+                if test_path == abs_testfile_path:
+                    # Setup full extension paths set.
+                    ext_paths = self._ext_paths[context]
+                    ext_paths.extend(self._library_paths)
+                    _execute_test(abs_testfile_path, ext_paths=ext_paths)
+                    return
+            # If the path not found.
+            logging.error('test not found: {}'.format(abs_testfile_path))
