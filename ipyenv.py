@@ -8,7 +8,8 @@ import logging
 
 
 # Config logger.
-logging.basicConfig(format='ipyenv(%(levelname)s): %(message)s')
+logging.basicConfig(format='ipyenv(%(levelname)s): %(message)s',
+                    level=logging.INFO)
 
 
 class PathEnvironment(object):
