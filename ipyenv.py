@@ -244,6 +244,57 @@ def shell():
         except SystemExit as ex:
             print('(Terminate ipyenv shell)')
 
+def execute():
+    """Execute a script with given extension paths."""
+    # CLI configs.
+    parser = argparse.ArgumentParser(description='ipyenv: execute scripts with a supplied environment')
+    parser.add_argument('exec') # ignore this.
+    parser.add_argument('target_script')
+    parser.add_argument('-l', '--libext', metavar='Library extension paths', nargs='*')
+    parser.add_argument('-e', '--encoding', metavar='.sitelibs file encoding')
+    args = parser.parse_args()
+    target = args.target_script
+    if not os.path.exists(target):
+        logging.error('target script not found: {}'.format(target))
+        return
+    # Execute target.
+    kwargs = {}
+    if args.libext:
+        kwargs['sitelib_paths'] = args.libext
+    if args.encoding:
+        kwargs['rcfile_encoding'] = args.encoding
+    with LibraryEnvironment(**kwargs):
+        sys.argv = [target.split(os.sep)[-1]]
+        try:
+            execfile(target)
+        except NameError:
+            exec(compile(open(target).read(),
+                         target, 'exec'))
+
+def test():
+    """Execute tests with given extension paths."""
+    # CLI configs.
+    parser = argparse.ArgumentParser(description='ipyenv: execute tests with a supplied environment')
+    parser.add_argument('test') # ignore this.
+    parser.add_argument('-n', '--name', metavar='target test script name/path')
+    parser.add_argument('-t', '--testdir', metavar='target test directory paths', nargs='*')
+    parser.add_argument('-l', '--libext', metavar='Library extension paths', nargs='*')
+    parser.add_argument('-e', '--encoding', metavar='.sitelibs file encoding')
+    args = parser.parse_args()
+    # Execute target.
+    kwargs = {}
+    if args.testdir:
+        kwargs['test_paths'] = args.testdir
+    if args.libext:
+        kwargs['sitelib_paths'] = args.libext
+    if args.encoding:
+        kwargs['rcfile_encoding'] = args.encoding
+    test_runner = TestRunner(**kwargs)
+    if args.name:
+        test_runner.execute_by_path(args.name)
+    else:
+        test_runner.execute_all()
+
 
 if __name__ == '__main__':
     # Command-line interfaces.
@@ -256,6 +307,8 @@ if __name__ == '__main__':
     )
     action_funcs = {
         'shell': shell,
+        'exec': execute,
+        'test': test,
     }
     parser.add_argument('action',
                         metavar='ACTION: ( {} )'.format(', '.join(actions)),
