@@ -97,5 +97,5 @@ or::
 
 etc.
 
-Additionally we recommend that you let your VCS ignore `setup.py` and `/sitelib/*`
+Additionally we recommend that you let your VCS ignore `ipyenv.py` and `/sitelib/*`
 except `.sitelibs` :).
