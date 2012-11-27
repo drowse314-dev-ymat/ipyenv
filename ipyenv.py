@@ -36,7 +36,7 @@ class PathEnvironment(object):
 
     def __exit__(self, exc_type, exc_value, traceback):
         # Rollback the original.
-        sys.path = self._orig_paths
+        sys.path = self._orig_paths[:]
         self._orig_paths = None
         del self._orig_paths
 
