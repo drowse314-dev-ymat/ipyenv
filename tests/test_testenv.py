@@ -13,7 +13,7 @@ import ipyenv
 
 class TestEnvironmentTest(unittest.TestCase):
     """
-    Assert TestEnvironment works, for setting up paths
+    Assert TestRunner works, for setting up paths
     for targets & execute tests files.
     """
 
@@ -51,7 +51,7 @@ class TestEnvironmentTest(unittest.TestCase):
             self.assertIn('i am ' + test_label + '\n',
                           executed)
 
-    def test_tun_specific(self):
+    def test_run_specific(self):
         """
         Run tests by given path to the file with corrct configs.
         """
