@@ -78,5 +78,14 @@ class LibraryEnvironmentTest(unittest.TestCase):
                              'i am sitelib/hrch/subpkg/inner_module.')
 
 
+class RCTest(LibraryEnvironmentTest):
+    """
+    Assert .ipyenvrc works with LibraryEnvironment.
+    """
+
+    def setUp(self):
+        self.env = ipyenv.ConfiguredLibraryEnvironment()
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=4)

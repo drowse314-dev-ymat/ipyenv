@@ -76,5 +76,14 @@ class TestEnvironmentTest(unittest.TestCase):
                           executed)
 
 
+class RCTest(TestEnvironmentTest):
+    """
+    Assert .ipyenvrc works with TestRunner.
+    """
+
+    def setUp(self):
+        self.test_runner = ipyenv.ConfiguredTestRunner()
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=4)

@@ -96,6 +96,11 @@ class LibraryEnvironment(PathEnvironment):
         PathEnvironment.__init__(self, library_paths)
 
 
+class ConfiguredLibraryEnvironment(LibraryEnvironment):
+    """LibraryEnvironment configured with .ipyenvrc."""
+    pass
+
+
 # Test script filename patterns.
 RE_TEST_SCRIPT_NAME = re.compile('^[Tt]est.*')
 
@@ -222,6 +227,11 @@ class TestRunner(object):
                     return
             # If the path not found.
             logging.error('test not found: {}'.format(abs_testfile_path))
+
+
+class ConfiguredTestRunner(TestRunner):
+    """TestRunner configured with .ipyenvrc."""
+    pass
 
 
 def shell():
