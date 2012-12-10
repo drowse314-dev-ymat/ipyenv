@@ -300,7 +300,7 @@ def shell():
     if args.encoding:
         kwargs['rcfile_encoding'] = args.encoding
     import code
-    with LibraryEnvironment(**kwargs):
+    with ConfiguredLibraryEnvironment(**kwargs):
         ic = code.InteractiveConsole()
         try:
             ic.interact('(ipyenv interactive shell)')
@@ -328,7 +328,7 @@ def execute():
         kwargs['sitelib_paths'] = args.libext
     if args.encoding:
         kwargs['rcfile_encoding'] = args.encoding
-    with LibraryEnvironment(**kwargs):
+    with ConfiguredLibraryEnvironment(**kwargs):
         sys.argv = [target.split(os.sep)[-1]]
         try:
             execfile(target)
@@ -356,7 +356,7 @@ def test():
         kwargs['sitelib_paths'] = args.libext
     if args.encoding:
         kwargs['rcfile_encoding'] = args.encoding
-    test_runner = TestRunner(**kwargs)
+    test_runner = ConfiguredTestRunner(**kwargs)
     if args.name:
         test_runner.execute_by_path(args.name)
     else:
