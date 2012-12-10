@@ -15,8 +15,10 @@ except ImportError:
 __all__ = [
     'PathEnvironment',
     'LibraryEnvironment',
+    'ConfiguredLibraryEnvironment',
     'TestProxy',
     'TestRunner',
+    'ConfiguredTestRunner',
 ]
 
 __version__ = 0.1
