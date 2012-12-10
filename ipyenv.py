@@ -104,7 +104,7 @@ def configured(args_from_config=None):
         def instantiate(config_path='./.ipyenvrc', **given_args):
             parser = configparser.ConfigParser()
             if not parser.read(config_path):
-                logging.error('configuration file not found: "{}"'.format(config_path))
+                logging.warn('configuration file not found: "{}"'.format(config_path))
                 return klass(**given_args)
             kwargs_from_config = {}
             for config_opt in args_from_config:
