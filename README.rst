@@ -99,6 +99,10 @@ the following::
     extdirs=./sitelib
     testdirs=./tests
 
+If you want to set multiple paths, separate with ';' like::
+
+    extdirs=./sitelib1;./sitelib2;...
+
 Further information
 -------------------
 
