@@ -6,6 +6,10 @@ import re
 import subprocess
 import logging
 import argparse
+try:
+    import ConfigParser as configparser
+except ImportError:
+    import configparser
 
 
 __all__ = [
@@ -81,6 +85,39 @@ def _load_extdir(ext_dir, rcfile_encoding, rc_filename):
                                                  ext_dir))
     return list(set(library_paths))
 
+def semicolon_to_dirlist(notation):
+    """Semi-colon separated string to a directory list."""
+    return [os.path.abspath(d.strip().replace('/', os.sep))
+            for d in notation.split(';')]
+
+def configured(args_from_config=None):
+    """
+    Makes a wrapper for  some environment class to instantiate with given
+    configuration file. The argument `args_from_config` must be formed:
+        {'section1.attrA': ('attrA', attrA_converter_func),
+         'section2.attrB': ('attrB', attrB_converter_func), ...}
+    """
+    def _wrapper(klass):
+        if args_from_config is None:
+            logging.warn('no arguments from configuration are set')
+            return lambda klass: klass()
+        def instantiate(config_path='./.ipyenvrc', **given_args):
+            parser = configparser.ConfigParser()
+            if not parser.read(config_path):
+                logging.error('configuration file not found: "{}"'.format(config_path))
+                return klass(**given_args)
+            kwargs_from_config = {}
+            for config_opt in args_from_config:
+                section, attribute = config_opt.split('.')
+                name, converter = args_from_config[config_opt]
+                kwargs_from_config[name] = converter(parser.get(section, attribute))
+            # Given arguments precede.
+            kwargs_from_config.update(given_args)
+            return klass(**kwargs_from_config)
+        instantiate.__doc__ = klass.__doc__
+        return instantiate
+    return _wrapper
+
 
 class LibraryEnvironment(PathEnvironment):
     """
@@ -96,6 +133,9 @@ class LibraryEnvironment(PathEnvironment):
         PathEnvironment.__init__(self, library_paths)
 
 
+@configured(args_from_config={
+                'libext.extdirs': ('sitelib_paths', semicolon_to_dirlist),
+            })
 class ConfiguredLibraryEnvironment(LibraryEnvironment):
     """LibraryEnvironment configured with .ipyenvrc."""
     pass
@@ -228,7 +268,16 @@ class TestRunner(object):
             # If the path not found.
             logging.error('test not found: {}'.format(abs_testfile_path))
 
+    @property
+    def ext_paths(self):
+        """Not to modify manually this property."""
+        return self._ext_paths
 
+
+@configured(args_from_config={
+                'test.testdirs': ('test_paths', semicolon_to_dirlist),
+                'test.extdirs': ('sitelib_paths', semicolon_to_dirlist),
+            })
 class ConfiguredTestRunner(TestRunner):
     """TestRunner configured with .ipyenvrc."""
     pass
