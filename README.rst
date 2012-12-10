@@ -84,6 +84,21 @@ or with a test script path::
 
     $ ipy ipyenv.py test -n tests/test_mod_top.py
 
+Setup with configuration
+------------------------
+
+You can setup `ipyenv` as your environment by putting  a configuration
+file named `.ipyenvrc` in the same directory as `ipyenv.py`, which looks like
+the following::
+
+    # library extension
+    [libext]
+    extdirs=./sitelib
+    # test runner configurations
+    [test]
+    extdirs=./sitelib
+    testdirs=./tests
+
 Further information
 -------------------
 
