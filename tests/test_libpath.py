@@ -36,6 +36,19 @@ class LibraryEnvironmentTest(unittest.TestCase):
                                         'sitelib')),)
         )
 
+    def tearDown(self):
+        """We must remove all module entries imported in this test case..."""
+        ext_paths = self.env.ext_paths
+        for module_name in list(sys.modules.keys()):
+            try:
+                module_source = sys.modules[module_name].__file__
+            except AttributeError:
+                continue
+            for ext_path in ext_paths:
+                if module_source.startswith(ext_path):
+                    del sys.modules[module_name]
+                    break
+
     def test_toplevel(self):
         """Refer to the top-level module."""
         with self.assertRaises(ImportError):
@@ -84,7 +97,9 @@ class RCTest(LibraryEnvironmentTest):
     """
 
     def setUp(self):
-        self.env = ipyenv.ConfiguredLibraryEnvironment()
+        self.env = ipyenv.ConfiguredLibraryEnvironment(
+                       config_path='./ipyenvrc_for_test'
+                   )
 
 
 if __name__ == '__main__':

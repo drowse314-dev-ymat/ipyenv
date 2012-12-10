@@ -25,6 +25,21 @@ class TestEnvironmentTest(unittest.TestCase):
                                         'sitelib')),)
         )
 
+    def tearDown(self):
+        """We must remove all module entries imported in this test case..."""
+        ext_paths = []
+        for exts in self.test_runner.ext_paths.values():
+            ext_paths.extend(exts)
+        for module_name in list(sys.modules.keys()):
+            try:
+                module_source = sys.modules[module_name].__file__
+            except AttributeError:
+                continue
+            for ext_path in ext_paths:
+                if module_source.startswith(ext_path):
+                    del sys.modules[module_name]
+                    break
+
     def test_run_all_tests(self):
         """
         Run tests recursively in given directories, with
@@ -82,7 +97,9 @@ class RCTest(TestEnvironmentTest):
     """
 
     def setUp(self):
-        self.test_runner = ipyenv.ConfiguredTestRunner()
+        self.test_runner = ipyenv.ConfiguredTestRunner(
+                               config_path='./ipyenvrc_for_test'
+                            )
 
 
 if __name__ == '__main__':

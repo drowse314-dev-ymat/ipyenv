@@ -1,0 +1,8 @@
+# library extension directory
+[libext]
+extdirs=./tests/sitelib
+
+# test scripts directory
+[test]
+extdirs=./tests/sitelib
+testdirs=./tests/tests
