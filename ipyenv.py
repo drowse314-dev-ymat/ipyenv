@@ -164,7 +164,7 @@ class TestProxy(object):
 
     # Script format to create on the fly.
     TEST_PROXY_FORMAT = (
-        """
+"""
 # encoding: utf-8
 import ipyenv
 import os
