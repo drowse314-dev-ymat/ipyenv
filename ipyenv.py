@@ -102,7 +102,7 @@ def configured(args_from_config=None):
     def _wrapper(klass):
         if args_from_config is None:
             logging.warn('no arguments from configuration are set')
-            return lambda klass: klass()
+            return lambda klass, **kwargs: klass(**kwargs)
         def instantiate(config_path='./.ipyenvrc', **given_args):
             parser = configparser.ConfigParser()
             if not parser.read(config_path):
