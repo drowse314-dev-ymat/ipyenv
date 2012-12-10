@@ -257,7 +257,7 @@ class TestRunner(object):
 
     def execute_by_path(self, testfile_path):
         """Execute a specifiv test by given path."""
-        abs_testfile_path = os.path.abspath(testfile_path)
+        abs_testfile_path = os.path.abspath(testfile_path.replace('/', os.sep))
         for context, tests in self._tests.items():
             # Find given path.
             for test_path in tests:

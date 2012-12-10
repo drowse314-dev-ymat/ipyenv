@@ -72,9 +72,9 @@ class TestEnvironmentTest(unittest.TestCase):
         """
         # Assert by log entry...
         test_log_path = './testlog'
-        self.test_runner.execute_by_path('./tests\\tests\\TestAtTop.py')
-        self.test_runner.execute_by_path('./tests\\tests\\sub_tests\\test_inner.py')
-        self.test_runner.execute_by_path('./tests\\tests\\sub_tests\\more_specific\\test.specific.py')
+        self.test_runner.execute_by_path('./tests/tests/TestAtTop.py')
+        self.test_runner.execute_by_path('./tests/tests/sub_tests/test_inner.py')
+        self.test_runner.execute_by_path('./tests/tests/sub_tests/more_specific/test.specific.py')
         executed = []
         with open(test_log_path, 'rt') as f:
             for line in f:
