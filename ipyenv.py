@@ -6,6 +6,8 @@ import re
 import subprocess
 import logging
 import argparse
+import functools
+import operator
 try:
     import ConfigParser as configparser
 except ImportError:
@@ -273,7 +275,9 @@ class TestRunner(object):
     @property
     def ext_paths(self):
         """Not to modify manually this property."""
-        return self._ext_paths
+        return functools.reduce(operator.add,
+                                [list(dirs) for dirs in self._ext_paths.values()]) \
+               + self._library_paths
 
 
 @configured(args_from_config={

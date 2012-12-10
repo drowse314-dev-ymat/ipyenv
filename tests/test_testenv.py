@@ -27,9 +27,7 @@ class TestEnvironmentTest(unittest.TestCase):
 
     def tearDown(self):
         """We must remove all module entries imported in this test case..."""
-        ext_paths = []
-        for exts in self.test_runner.ext_paths.values():
-            ext_paths.extend(exts)
+        ext_paths = self.test_runner.ext_paths
         for module_name in list(sys.modules.keys()):
             try:
                 module_source = sys.modules[module_name].__file__
