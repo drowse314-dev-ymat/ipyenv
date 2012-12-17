@@ -59,6 +59,20 @@ print(outer_var)
             with self.assertRaises(NameError):
                 ipyenv._execute_file(tempf)
 
+    def test_available_vars(self):
+        """
+        Assert some globals are available:
+            sys, __name__, __file__
+        """
+        script = """
+#encoding: utf-8
+sys
+__name__
+__file__
+"""
+        with ipyenv.RWFreeNamedTempFile(source=script) as tempf:
+            ipyenv._execute_file(tempf)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=4)
