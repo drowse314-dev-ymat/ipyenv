@@ -24,7 +24,7 @@ __all__ = [
     'ConfiguredTestRunner',
 ]
 
-__version__ = 0.3
+__version__ = 0.3.1
 
 
 # Config logger.
@@ -166,6 +166,7 @@ def _execute_file(target_filename):
     global_vars = {
         'sys': sys,
         '__name__': '__main__',
+        '__file__': target_filename,
     }
     if hasattr(__builtins__, 'execfile'):
         execfile(target_filename, global_vars)
