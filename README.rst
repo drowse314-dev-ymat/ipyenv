@@ -15,7 +15,7 @@ All written in pure Python!
 Usage: Library environment
 --------------------------
 
-Suppose you have your source tree below, and put `ipyenv.py` on the
+Suppose you have your source tree below, and put ``ipyenv.py`` on the
 project root.::
 
     project/
@@ -39,20 +39,20 @@ project root.::
         |   `-- test_mod_inner.py
         `-- test_mod_top.py
 
-Remember you can just copy `ipyenv.py` to your project to apply it (we
+Remember you can just copy ``ipyenv.py`` to your project to apply it (we
 assume that you can access no library management tools or libraries).
 
-Configure `.sitelibs` under `sitelib` directory for your favorite modules
-or packages.  Just write up a relative path (to `sitelib` dir.) per line in
-`.sitelibs`, *FROM WHICH YOU CAN IMPORT* ones (NOT the packege root dirs, etc.).
+Configure ``.sitelibs`` under ``sitelib`` directory for your favorite modules
+or packages.  Just write up a relative path (to ``sitelib`` dir.) per line in
+``.sitelibs``, **FROM WHICH YOU CAN IMPORT** ones (NOT the packege root dirs, etc.).
 For this project it would be like::
 
     ./
     ./package_wrapping_dir
 
-After this, you can import everything in `sitelib` through ipyenv.py.
-Suppose `package.mod_top` imports one of these, then `runner_script.py`
-imports `package.mod_top`, you can do as::
+After this, you can import everything in ``sitelib`` through ipyenv.py.
+Suppose ``package.mod_top`` imports one of these, then ``runner_script.py``
+imports ``package.mod_top``, you can do as::
 
     $ ipy ipyenv.py shell
     (ipyenv interactive shell)
@@ -70,8 +70,8 @@ Usage: Test environment
 
 Suppose the same project source tree.
 
-Configure `.testfor` under `tests` directory.  Similarly to `.sitelibs`,
-write up a relative path per line *FROM WHICH YOU CAN IMPORT* modules/packages
+Configure ``.testfor`` under ``tests`` directory.  Similarly to ``.sitelibs``,
+write up a relative path per line **FROM WHICH YOU CAN IMPORT** modules/packages
 the tests want to import for testing.  For this project it would be simply like::
 
     ../
@@ -87,8 +87,8 @@ or with a test script path::
 Setup with configuration
 ------------------------
 
-You can setup `ipyenv` as your environment by putting  a configuration
-file named `.ipyenvrc` in the same directory as `ipyenv.py`, which looks like
+You can setup ``ipyenv`` as your environment by putting  a configuration
+file named ``.ipyenvrc`` in the same directory as ``ipyenv.py``, which looks like
 the following::
 
     # library extension
@@ -116,5 +116,5 @@ or::
 
 etc.
 
-Additionally we recommend that you let your VCS ignore `ipyenv.py` and `/sitelib/*`
-except `.sitelibs` :).
+Additionally we recommend that you let your VCS ignore ``ipyenv.py`` and ``/sitelib/*``
+except ``.sitelibs`` :).
