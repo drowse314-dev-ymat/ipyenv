@@ -8,6 +8,7 @@ import logging
 import argparse
 import functools
 import operator
+import tempfile
 try:
     import ConfigParser as configparser
 except ImportError:
@@ -157,8 +158,56 @@ def _find_tests(test_dir):
                 test_paths.append(os.sep.join((root, filename)))
     return test_paths
 
+def _execute_file(target_filename):
+    """
+    Execute the target file via `exec`/`execfile`,
+    along with the current sys.path environment.
+    """
+    global_vars = {
+        'sys': sys,
+        '__name__': '__main__',
+    }
+    if hasattr(__builtins__, 'execfile'):
+        execfile(target_filename, global_vars)
+    else:
+        exec(compile(open(target_filename).read(),
+                     target_filename, 'exec'),
+             global_vars)
 
-class TestProxy(object):
+
+class RWFreeNamedTempFile(object):
+    """
+    Context manager for creating a temporary file using
+    tempfile.NamedTemporaryFile, accessible without no locks
+    on R/W operations (since already closed), removed on exit.
+    """
+
+    def __init__(self, source='', target_dir='./', encoding='utf-8'):
+        self._source = source
+        self._target_dir = target_dir
+        self._encoding = encoding
+
+    def __enter__(self):
+        tempf = tempfile.NamedTemporaryFile(
+            mode='wb',
+            delete=False,
+            dir=self._target_dir
+        )
+        tempf.write(self._source.encode(self._encoding))
+        tempf.close()
+        self._tempf_name = tempf.name
+        return tempf.name
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        while True:
+            try:
+                os.unlink(self._tempf_name)
+                break
+            except OSError:
+                continue
+
+
+class TestProxy(RWFreeNamedTempFile):
     """
     Context manager for creating execution proxy script
     for isolated test environment.
@@ -175,33 +224,16 @@ target = '{target_filepath}'
 sys.argv = [target.split(os.sep)[-1]]
 test_env = ipyenv.PathEnvironment(ext_paths={ext_paths})
 with test_env as te:
-    try:
-        execfile(target)
-    except NameError:
-        exec(compile(open(target).read(),
-                     target, 'exec'))
+    ipyenv._execute_file(target)
 """
     )
 
     def __init__(self, target_filepath, ext_paths=tuple()):
         # All paths are desired to be absolute.
         ext_paths = [path for path in ext_paths]  # accept iterator, etc.
-        self._script = self.TEST_PROXY_FORMAT.format(ext_paths=ext_paths,
-                                                     target_filepath=target_filepath)
-        self._target = target_filepath.split(os.sep)[-1]
-
-    def __enter__(self):
-        proxy_name = '.' + self._target + '.testproxy'
-        while os.path.exists(proxy_name):
-            proxy_name += '.temp'
-        proxy_name = os.path.abspath(proxy_name)
-        with open(proxy_name, 'wb') as proxy:
-            proxy.write(self._script.encode('utf-8'))
-        self._proxy_name = proxy_name
-        return proxy_name
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        os.remove(self._proxy_name)
+        script = self.TEST_PROXY_FORMAT.format(ext_paths=ext_paths,
+                                               target_filepath=target_filepath)
+        RWFreeNamedTempFile.__init__(self, source=script)
 
 
 def _escape_path(path):
@@ -336,11 +368,7 @@ def execute():
         kwargs['rcfile_encoding'] = args.encoding
     with ConfiguredLibraryEnvironment(**kwargs):
         sys.argv = [target.split(os.sep)[-1]]
-        try:
-            execfile(target)
-        except NameError:
-            exec(compile(open(target).read(),
-                         target, 'exec'))
+        _execute_file(target)
 
 def test():
     """Execute tests with given extension paths."""
