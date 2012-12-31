@@ -76,7 +76,7 @@ the tests want to import for testing.  For this project it would be simply like:
 
     ../
 
-Then you can execute all tests (named '^[Tt]est.*') with::
+Then you can execute all tests (named '^[Tt]est.*\.py$') with::
 
     $ ipy ipyenv.py test
 
