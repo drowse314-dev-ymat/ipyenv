@@ -55,9 +55,10 @@ class ExecContextTest(unittest.TestCase):
 # encoding: utf-8
 print(outer_var)
         """
+        dummy_pathenv = ipyenv.PathEnvironment([])
         with ipyenv.RWFreeNamedTempFile(source=script) as tempf:
             with self.assertRaises(NameError):
-                ipyenv._execute_file(tempf)
+                ipyenv._execute_file(tempf, dummy_pathenv, load_module=False)
 
     def test_available_vars(self):
         """
@@ -70,8 +71,9 @@ sys
 __name__
 __file__
 """
+        dummy_pathenv = ipyenv.PathEnvironment([])
         with ipyenv.RWFreeNamedTempFile(source=script) as tempf:
-            ipyenv._execute_file(tempf)
+            ipyenv._execute_file(tempf, dummy_pathenv, load_module=False)
 
 
 if __name__ == '__main__':

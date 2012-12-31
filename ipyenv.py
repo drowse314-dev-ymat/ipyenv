@@ -184,17 +184,20 @@ def _get_module_from_path(target_filename, env):
     return module
 
 
-def _execute_file(target_filename, env):
+def _execute_file(target_filename, env=None, load_module=True):
     """
     Execute the target file via `exec`/`execfile`,
     along with the current sys.path environment.
     """
-    # Almost all objects in the target module
-    # are visible from `__main__`.
-    main = __import__('__main__')
-    target_module = _get_module_from_path(target_filename, env)
-    for name in dir(target_module):
-        setattr(main, name, getattr(target_module, name))
+    if load_module:
+        # Almost all objects in the target module
+        # are visible from `__main__`.
+        assert env is not None, \
+            'Path environment object is needed to preload file as module.'
+        main = __import__('__main__')
+        target_module = _get_module_from_path(target_filename, env)
+        for name in dir(target_module):
+            setattr(main, name, getattr(target_module, name))
     global_vars = {
         'sys': sys,
         '__name__': '__main__',
