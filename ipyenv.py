@@ -42,6 +42,7 @@ class PathEnvironment(object):
         # Copy the original sys.path & switch.
         self._orig_paths = sys.path[:]
         sys.path.extend(self._ext_paths)
+        return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         # Rollback the original.
@@ -147,7 +148,7 @@ class ConfiguredLibraryEnvironment(LibraryEnvironment):
 
 
 # Test script filename patterns.
-RE_TEST_SCRIPT_NAME = re.compile('^[Tt]est.*')
+RE_TEST_SCRIPT_NAME = re.compile('^[Tt]est.*\.py$')
 
 def _find_tests(test_dir):
     """Find recursively test scripts under the given path."""
@@ -158,11 +159,33 @@ def _find_tests(test_dir):
                 test_paths.append(os.sep.join((root, filename)))
     return test_paths
 
-def _execute_file(target_filename):
+
+def _get_module_from_path(target_filename, env):
+
+    path_components = os.path.split(target_filename)
+    local_name = path_components[-1]
+    dir_path = os.path.sep.join(path_components[:-1])
+    module_name = os.path.extsep.join(local_name.split(os.path.extsep)[:-1])
+
+    ext_paths = []
+    ext_paths.append(dir_path)
+    ext_paths.extend(env.ext_paths)
+    with PathEnvironment(ext_paths=ext_paths):
+        module = __import__(module_name)
+    return module
+
+
+def _execute_file(target_filename, env):
     """
     Execute the target file via `exec`/`execfile`,
     along with the current sys.path environment.
     """
+    # Almost all objects in the target module
+    # are visible from `__main__`.
+    main = __import__('__main__')
+    target_module = _get_module_from_path(target_filename, env)
+    for name in dir(target_module):
+        setattr(main, name, getattr(target_module, name))
     global_vars = {
         'sys': sys,
         '__name__': '__main__',
@@ -225,7 +248,7 @@ target = '{target_filepath}'
 sys.argv = [target.split(os.sep)[-1]]
 test_env = ipyenv.PathEnvironment(ext_paths={ext_paths})
 with test_env as te:
-    ipyenv._execute_file(target)
+    ipyenv._execute_file(target, te)
 """
     )
 
@@ -367,9 +390,9 @@ def execute():
         kwargs['sitelib_paths'] = args.libext
     if args.encoding:
         kwargs['rcfile_encoding'] = args.encoding
-    with ConfiguredLibraryEnvironment(**kwargs):
+    with ConfiguredLibraryEnvironment(**kwargs) as env:
         sys.argv = [target.split(os.sep)[-1]]
-        _execute_file(target)
+        _execute_file(target, env)
 
 def test():
     """Execute tests with given extension paths."""

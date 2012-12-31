@@ -55,10 +55,11 @@ class TestEnvironmentTest(unittest.TestCase):
         tests_expected = [
             'TestAtTop',
             'test_toplevel',
+            'test_moduletype',
             'sub_tests/test_inner',
             'sub_tests/testinner2',
             'sub_tests/more_specific/TestSpecific',
-            'sub_tests/more_specific/test.specific',
+            'sub_tests/more_specific/test_specific',
         ]
         for test_label in tests_expected:
             self.assertIn('i am ' + test_label + '\n',
@@ -72,7 +73,7 @@ class TestEnvironmentTest(unittest.TestCase):
         test_log_path = './testlog'
         self.test_runner.execute_by_path('./tests/tests/TestAtTop.py')
         self.test_runner.execute_by_path('./tests/tests/sub_tests/test_inner.py')
-        self.test_runner.execute_by_path('./tests/tests/sub_tests/more_specific/test.specific.py')
+        self.test_runner.execute_by_path('./tests/tests/sub_tests/more_specific/test_specific.py')
         executed = []
         with open(test_log_path, 'rt') as f:
             for line in f:
@@ -82,7 +83,7 @@ class TestEnvironmentTest(unittest.TestCase):
         tests_expected = [
             'TestAtTop',
             'sub_tests/test_inner',
-            'sub_tests/more_specific/test.specific',
+            'sub_tests/more_specific/test_specific',
         ]
         for test_label in tests_expected:
             self.assertIn('i am ' + test_label + '\n',
