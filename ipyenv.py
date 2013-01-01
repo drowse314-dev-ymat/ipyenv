@@ -33,12 +33,20 @@ __all__ = [
     'ConfiguredTestRunner',
 ]
 
-__version__ = '0.4.2'
+__version__ = '0.4.3'
 
 
 # Config logger.
-logging.basicConfig(format='ipyenv(%(levelname)s): %(message)s',
-                    level=logging.INFO)
+def create_logger(level=logging.INFO):
+    logger = logging.getLogger('ipyenv')
+    logger.setLevel(level)
+    handler = logging.StreamHandler()
+    handler.setLevel(level)
+    formatter = logging.Formatter('ipyenv(%(levelname)s): %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    return logger
+logger = create_logger()
 
 
 class PathEnvironment(object):
@@ -84,13 +92,13 @@ def _resolve_rcpath(path_repr, extdir_abspath):
 def _load_extdir(ext_dir, rcfile_encoding, rc_filename):
     """Load rc file & extract import paths to extend."""
     if not (os.path.exists(ext_dir) and os.path.isdir(ext_dir)):
-        logging.error('extension directory "{}" not found'.format(ext_dir))
+        logger.error('extension directory "{}" not found'.format(ext_dir))
         return []
     ext_dir = os.path.abspath(ext_dir)
     # Get rc.
     rcfile_path = _find_rc(ext_dir, rc_filename)
     if rcfile_path is None:
-        logging.error('{} in "{}" not found'.format(rc_filename, ext_dir))
+        logger.error('{} in "{}" not found'.format(rc_filename, ext_dir))
         return []
     # Read out rc.
     library_paths = []
@@ -114,12 +122,12 @@ def configured(args_from_config=None):
     """
     def _wrapper(klass):
         if args_from_config is None:
-            logging.warn('no arguments from configuration are set')
+            logger.warn('no arguments from configuration are set')
             return lambda klass, **kwargs: klass(**kwargs)
         def instantiate(config_path='./.ipyenvrc', **given_args):
             parser = configparser.ConfigParser()
             if not parser.read(config_path):
-                logging.warn('configuration file not found: "{}"'.format(config_path))
+                logger.warn('configuration file not found: "{}"'.format(config_path))
                 return klass(**given_args)
             kwargs_from_config = {}
             for config_opt in args_from_config:
@@ -284,7 +292,7 @@ def _execute_test(testfile_path, ext_paths=tuple()):
     Execute test script, with invoking executable
     & given path sextension by subprocessing.
     """
-    logging.info('will execute test: {}'.format(testfile_path))
+    logger.info('will execute test: {}'.format(testfile_path))
     ext_paths = [path for path in ext_paths]  # accept iterator, etc.
     # `_escape_path` only applied to  `testfile_path`:
     #     Built-in `open` never accepts unescaped special characters,
@@ -311,7 +319,7 @@ class TestRunner(object):
         self._ext_paths = {}    # context => extension paths(test target paths)
         for test_dir in test_paths:
             if not (os.path.exists(test_dir) and os.path.isdir(test_dir)):
-                logging.error('tests directory "{}" not found'.format(test_dir))
+                logger.error('tests directory "{}" not found'.format(test_dir))
                 continue
             test_dir = os.path.abspath(test_dir)
             self._tests[test_dir] = _find_tests(test_dir)
@@ -341,7 +349,7 @@ class TestRunner(object):
                     _execute_test(abs_testfile_path, ext_paths=ext_paths)
                     return
             # If the path not found.
-            logging.error('test not found: {}'.format(abs_testfile_path))
+            logger.error('test not found: {}'.format(abs_testfile_path))
 
     @property
     def ext_paths(self):
@@ -397,7 +405,7 @@ def execute():
     args = parser.parse_args()
     target = args.target_script
     if not os.path.exists(target):
-        logging.error('target script not found: {}'.format(target))
+        logger.error('target script not found: {}'.format(target))
         return
     # Execute target.
     kwargs = {}
