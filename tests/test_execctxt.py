@@ -9,6 +9,10 @@ sys.path.append(os.path.abspath('../')) # works well in IronPython.
 sys.path.append(os.path.abspath('.'))   # works well in the others.
 import ipyenv
 
+# Cancel logging.
+import logging
+ipyenv.create_logger(logging.CRITICAL)
+
 
 class RWFreeNamedTempFileTest(unittest.TestCase):
     """Assert `ipyenv.RWFreeNamedTempFile` class works."""
@@ -77,4 +81,4 @@ __file__
 
 
 if __name__ == '__main__':
-    unittest.main(verbosity=4)
+    unittest.main(verbosity=1)

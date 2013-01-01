@@ -11,7 +11,10 @@ RE_TEST_SCRIPT_NAME = re.compile('^[Tt]est.*\.py$')
 
 
 def execute_test(filepath):
+    print('ipyenv(test runner): execute test script: "{}"'.format(filepath))
+    print('======================================================================')
     subprocess.call([sys.executable, filepath])
+    print('\n')
 
 def run():
     for root, dirs, files in os.walk(TARGET_DIR):
