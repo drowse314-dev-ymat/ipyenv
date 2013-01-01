@@ -33,7 +33,7 @@ __all__ = [
     'ConfiguredTestRunner',
 ]
 
-__version__ = '0.4.1'
+__version__ = '0.4.2'
 
 
 # Config logger.
@@ -125,7 +125,10 @@ def configured(args_from_config=None):
             for config_opt in args_from_config:
                 section, attribute = config_opt.split('.')
                 name, converter = args_from_config[config_opt]
-                kwargs_from_config[name] = converter(parser.get(section, attribute))
+                try:
+                    kwargs_from_config[name] = converter(parser.get(section, attribute))
+                except configparser.NoOptionError:
+                    pass
             # Given arguments precede.
             kwargs_from_config.update(given_args)
             return klass(**kwargs_from_config)

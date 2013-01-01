@@ -102,5 +102,16 @@ class RCTest(LibraryEnvironmentTest):
                    )
 
 
+class PartialRCTest(unittest.TestCase):
+    """
+    Assert .ipyenvrc works with partial configuration.
+    """
+
+    def test_partial_config(self):
+        env = ipyenv.ConfiguredLibraryEnvironment(
+                  config_path='./ipyenvrc_for_test_partial'
+              )
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=4)

@@ -1,0 +1,6 @@
+# library extension directory
+[libext]
+
+# test scripts directory
+[test]
+testdirs=./tests/tests
