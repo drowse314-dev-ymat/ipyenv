@@ -116,6 +116,11 @@ class PartialRCTest(unittest.TestCase):
                   config_path='./ipyenvrc_for_test_partial'
               )
 
+    def test_section_lacking_config(self):
+        env = ipyenv.ConfiguredLibraryEnvironment(
+                  config_path='./ipyenvrc_for_test_lackingsection'
+              )
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=1)

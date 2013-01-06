@@ -115,6 +115,11 @@ class RCTest(TestEnvironmentTest):
                                config_path='./ipyenvrc_for_test_partial'
                       )
 
+    def test_section_lacking_config(self):
+        test_runner = ipyenv.ConfiguredTestRunner(
+                               config_path='./ipyenvrc_for_test_lackingsection'
+                      )
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=1)

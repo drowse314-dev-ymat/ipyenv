@@ -135,6 +135,8 @@ def configured(args_from_config=None):
                 name, converter = args_from_config[config_opt]
                 try:
                     kwargs_from_config[name] = converter(parser.get(section, attribute))
+                except configparser.NoSectionError:
+                    pass
                 except configparser.NoOptionError:
                     pass
             # Given arguments precede.
