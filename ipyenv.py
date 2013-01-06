@@ -5,7 +5,7 @@
 
     A simple and poor environment supplyer for Python development.
 
-    :copyright: (c) 2014 by drowse314-dev-ymat@github.com.
+    :copyright: (c) 2013 by drowse314-dev-ymat@github.com.
     :licence: BSD, see LICENCE for more details.
 """
 
