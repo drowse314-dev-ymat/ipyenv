@@ -102,10 +102,10 @@ class RCTest(TestEnvironmentTest):
     def setUp(self):
         self.test_runner = ipyenv.ConfiguredTestRunner(
                                config_path='./ipyenvrc_for_test'
-                            )
+                           )
 
 
-class RCTest(TestEnvironmentTest):
+class PartialRCTest(TestEnvironmentTest):
     """
     Assert .ipyenvrc works with partial configuration.
     """
@@ -119,6 +119,68 @@ class RCTest(TestEnvironmentTest):
         test_runner = ipyenv.ConfiguredTestRunner(
                                config_path='./ipyenvrc_for_test_lackingsection'
                       )
+
+
+class TestAppendingMain(unittest.TestCase):
+    """
+    Testing TestProxy, set on its funcionality appending `unittest.main`.
+    """
+
+    def setUp(self):
+        self.test_runner = ipyenv.TestRunner(
+            test_paths=(os.sep.join((os.path.dirname(os.path.realpath(__file__)),
+                                     'nose-like-tests')),),
+            sitelib_paths=(os.sep.join((os.path.dirname(os.path.realpath(__file__)),
+                                        'sitelib')),),
+            append_main=True
+        )
+
+    def test_run_all_tests(self):
+        # Assert by log entry...
+        test_log_path = './testlog'
+        self.test_runner.execute_all()
+        executed = []
+        with open(test_log_path, 'rt') as f:
+            for line in f:
+                executed.append(line)
+        os.remove(test_log_path)
+        # Assert all tests invoked.
+        tests_expected = [
+            'test_withoutmain',
+            'sub_tests/test_inner_withoutmain',
+        ]
+        for test_label in tests_expected:
+            self.assertIn('i am ' + test_label + '\n',
+                          executed)
+
+    def test_run_specific(self):
+        """
+        Run tests by given path to the file with corrct configs.
+        """
+        # Assert by log entry...
+        test_log_path = './testlog'
+        self.test_runner.execute_by_path('./tests/nose-like-tests/sub_tests/test_inner_withoutmain.py')
+        executed = []
+        with open(test_log_path, 'rt') as f:
+            for line in f:
+                executed.append(line)
+        os.remove(test_log_path)
+        # Assert all tests invoked.
+        tests_expected = [
+            'sub_tests/test_inner_withoutmain',
+        ]
+        for test_label in tests_expected:
+            self.assertIn('i am ' + test_label + '\n',
+                          executed)
+
+
+class RCTestAppendingMain(TestAppendingMain):
+
+    def setUp(self):
+        self.test_runner = ipyenv.ConfiguredTestRunner(
+                               config_path='./ipyenvrc_for_test_noselike',
+                               append_main=True
+                           )
 
 
 if __name__ == '__main__':

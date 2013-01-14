@@ -33,7 +33,7 @@ __all__ = [
     'ConfiguredTestRunner',
 ]
 
-__version__ = '0.4.4'
+__version__ = '0.5.0'
 
 
 # Config logger.
@@ -112,6 +112,15 @@ def semicolon_to_dirlist(notation):
     """Semi-colon separated string to a directory list."""
     return [os.path.abspath(d.strip().replace('/', os.sep))
             for d in notation.split(';')]
+
+BOOLEAN_STATES = {'1': True, 'yes': True, 'true': True, 'on': True,
+                  '0': False, 'no': False, 'false': False, 'off': False}
+
+def state_to_boolean(notation):
+    """Boolean-state string to boolean."""
+    if notation.lower() not in BOOLEAN_STATES:
+        raise ValueError('Not a boolean: {}'.format(notation))
+    return BOOLEAN_STATES[notation.lower()]
 
 def configured(args_from_config=None):
     """
@@ -264,7 +273,7 @@ class TestProxy(RWFreeNamedTempFile):
 
     # Script format to create on the fly.
     TEST_PROXY_FORMAT = (
-"""
+"""\
 # encoding: utf-8
 import ipyenv
 import os
@@ -272,16 +281,38 @@ import sys
 target = '{target_filepath}'
 sys.argv = [target.split(os.sep)[-1]]
 test_env = ipyenv.PathEnvironment(ext_paths={ext_paths})
-with test_env as te:
-    ipyenv._execute_file(target, te)
+{exec_stmt}\
 """
     )
 
-    def __init__(self, target_filepath, ext_paths=tuple()):
+    # Execution statements.
+    EXEC_FORMAT = (
+"""\
+with test_env as te:
+    ipyenv._execute_file(target, te)\
+"""
+    )
+
+    EXEC_FORMAT_WITH_MAIN = (
+"""\
+with test_env as te:
+    ipyenv._execute_file(target, te)
+    import unittest
+    unittest.main(verbosity={verbosity})\
+"""
+    )
+
+    def __init__(self, target_filepath, ext_paths=tuple(),
+                 append_main=False, verbosity=1):
         # All paths are desired to be absolute.
         ext_paths = [path for path in ext_paths]  # accept iterator, etc.
+        if append_main:
+            exec_stmt = self.EXEC_FORMAT_WITH_MAIN.format(verbosity=verbosity)
+        else:
+            exec_stmt = self.EXEC_FORMAT
         script = self.TEST_PROXY_FORMAT.format(ext_paths=ext_paths,
-                                               target_filepath=target_filepath)
+                                               target_filepath=target_filepath,
+                                               exec_stmt=exec_stmt)
         RWFreeNamedTempFile.__init__(self, source=script)
 
 
@@ -289,7 +320,8 @@ def _escape_path(path):
     """Path separator escaping in Windows."""
     return path.replace('\\', '\\\\')
 
-def _execute_test(testfile_path, ext_paths=tuple()):
+def _execute_test(testfile_path, ext_paths=tuple(), append_main=False,
+                  verbosity=1):
     """
     Execute test script, with invoking executable
     & given path sextension by subprocessing.
@@ -300,7 +332,9 @@ def _execute_test(testfile_path, ext_paths=tuple()):
     #     Built-in `open` never accepts unescaped special characters,
     #     while a sequence of `list.__repr__` -> `str.format` does.
     with TestProxy(_escape_path(testfile_path),
-                   ext_paths=ext_paths) as proxy_filename:
+                   ext_paths=ext_paths,
+                   append_main=append_main,
+                   verbosity=verbosity) as proxy_filename:
         subprocess.call([sys.executable, proxy_filename])
 
 
@@ -311,7 +345,7 @@ class TestRunner(object):
     """
 
     def __init__(self, test_paths=('./tests',), sitelib_paths=('./sitelib',),
-                 rcfile_encoding='utf-8'):
+                 rcfile_encoding='utf-8', append_main=False, verbosity=1):
         # Extend common library pahts.
         self._library_paths = []
         for sitelib_dir in sitelib_paths:
@@ -326,6 +360,9 @@ class TestRunner(object):
             test_dir = os.path.abspath(test_dir)
             self._tests[test_dir] = _find_tests(test_dir)
             self._ext_paths[test_dir] = _load_extdir(test_dir, rcfile_encoding, '.testfor')
+        # Save extra arguments.
+        self._append_main = append_main
+        self._verbosity = verbosity
 
     def execute_all(self):
         """Execute all tests found."""
@@ -336,7 +373,9 @@ class TestRunner(object):
             ext_paths.extend(library_paths)
             # Iterate over tests.
             for testfile_path in tests:
-                _execute_test(testfile_path, ext_paths=ext_paths)
+                _execute_test(testfile_path, ext_paths=ext_paths,
+                              append_main=self._append_main,
+                              verbosity=self._verbosity)
 
     def execute_by_path(self, testfile_path):
         """Execute a specifiv test by given path."""
@@ -348,7 +387,9 @@ class TestRunner(object):
                     # Setup full extension paths set.
                     ext_paths = self._ext_paths[context]
                     ext_paths.extend(self._library_paths)
-                    _execute_test(abs_testfile_path, ext_paths=ext_paths)
+                    _execute_test(abs_testfile_path, ext_paths=ext_paths,
+                                  append_main=self._append_main,
+                                  verbosity=self._verbosity)
                     return
             # If the path not found.
             logger.error('test not found: {}'.format(abs_testfile_path))
@@ -364,6 +405,8 @@ class TestRunner(object):
 @configured(args_from_config={
                 'test.testdirs': ('test_paths', semicolon_to_dirlist),
                 'test.extdirs': ('sitelib_paths', semicolon_to_dirlist),
+                'test.autoexec': ('append_main', state_to_boolean),
+                'test.verbosity': ('verbosity', int),
             })
 class ConfiguredTestRunner(TestRunner):
     """TestRunner configured with .ipyenvrc."""
@@ -377,8 +420,8 @@ def shell():
         description='ipyenv v{}: shell with a supplied environment'.format(__version__)
     )
     parser.add_argument('shell') # ignore this.
-    parser.add_argument('-l', '--libext', metavar='Library extension paths', nargs='*')
-    parser.add_argument('-e', '--encoding', metavar='.sitelibs file encoding')
+    parser.add_argument('-l', '--libext', help='Library extension paths', nargs='*')
+    parser.add_argument('-e', '--encoding', help='.sitelibs file encoding')
     args = parser.parse_args()
     # Invoke a shell.
     kwargs = {}
@@ -402,8 +445,8 @@ def execute():
     )
     parser.add_argument('exec') # ignore this.
     parser.add_argument('target_script')
-    parser.add_argument('-l', '--libext', metavar='Library extension paths', nargs='*')
-    parser.add_argument('-e', '--encoding', metavar='.sitelibs file encoding')
+    parser.add_argument('-l', '--libext', help='Library extension paths', nargs='*')
+    parser.add_argument('-e', '--encoding', help='.sitelibs file encoding')
     args = parser.parse_args()
     target = args.target_script
     if not os.path.exists(target):
@@ -423,13 +466,17 @@ def test():
     """Execute tests with given extension paths."""
     # CLI configs.
     parser = argparse.ArgumentParser(
-        description='ipyenv v{}: Execute tests with a supplied environment'.format(__version__)
+        description='ipyenv v{}: Execute test scripts with a supplied environment'.format(__version__)
     )
     parser.add_argument('test') # ignore this.
-    parser.add_argument('-n', '--name', metavar='target test script name/path')
-    parser.add_argument('-t', '--testdir', metavar='target test directory paths', nargs='*')
-    parser.add_argument('-l', '--libext', metavar='Library extension paths', nargs='*')
-    parser.add_argument('-e', '--encoding', metavar='.sitelibs file encoding')
+    parser.add_argument('-n', '--name', help='target test script name/path')
+    parser.add_argument('-t', '--testdir', help='target test directory paths', nargs='*')
+    parser.add_argument('-l', '--libext', help='Library extension paths', nargs='*')
+    parser.add_argument('-e', '--encoding', help='.sitelibs file encoding')
+    parser.add_argument('-a', '--autoexec', action='store_true', default=False,
+                        help='auto-exec tests without command-line interfaces on scripts '
+                                '(exec twice if provided)')
+    parser.add_argument('-v', '--verbosity', type=int, help='verbosity for unittest.main')
     args = parser.parse_args()
     # Execute target.
     kwargs = {}
@@ -439,6 +486,10 @@ def test():
         kwargs['sitelib_paths'] = args.libext
     if args.encoding:
         kwargs['rcfile_encoding'] = args.encoding
+    if args.autoexec:
+        kwargs['append_main'] = args.autoexec
+    if args.verbosity:
+        kwargs['verbosity'] = args.verbosity
     test_runner = ConfiguredTestRunner(**kwargs)
     if args.name:
         test_runner.execute_by_path(args.name)
@@ -463,7 +514,7 @@ if __name__ == '__main__':
         'test': test,
     }
     parser.add_argument('action',
-                        metavar='ACTION: ( {} )'.format(', '.join(actions)),
+                        help='ACTION: ( {} )'.format(', '.join(actions)),
                         choices=actions)
     # Parse & execute.
     args = parser.parse_args(sys.argv[1:2])
