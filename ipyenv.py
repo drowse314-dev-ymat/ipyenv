@@ -124,7 +124,7 @@ def state_to_boolean(notation):
 
 def configured(args_from_config=None):
     """
-    Makes a wrapper for  some environment class to instantiate with given
+    Makes a wrapper for some environment class to instantiate with given
     configuration file. The argument `args_from_config` must be formed:
         {'section1.attrA': ('argument_nameA', attrA_converter_func),
          'section2.attrB': ('argumant_nameB', attrB_converter_func), ...}
