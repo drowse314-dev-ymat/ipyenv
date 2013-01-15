@@ -272,33 +272,28 @@ class TestProxy(RWFreeNamedTempFile):
     """
 
     # Script format to create on the fly.
-    TEST_PROXY_FORMAT = (
+
+    PROXY_FORMAT_COMMON = (
 """\
 # encoding: utf-8
 import ipyenv
 import os
 import sys
-target = '{target_filepath}'
-sys.argv = [target.split(os.sep)[-1]]
 test_env = ipyenv.PathEnvironment(ext_paths={ext_paths})
 {exec_stmt}\
 """
     )
 
-    # Execution statements.
-    EXEC_FORMAT = (
+    PROXY_FORMAT_EXEC = (
 """\
-with test_env as te:
-    ipyenv._execute_file(target, te)\
-"""
-    )
-
-    EXEC_FORMAT_WITH_MAIN = (
-"""\
+target = '{target_filepath}'
+sys.argv = [target.split(os.sep)[-1]]
+append_main = {append_main}
 with test_env as te:
     ipyenv._execute_file(target, te)
-    import unittest
-    unittest.main(verbosity={verbosity})\
+    if append_main:
+        import unittest
+        unittest.main(verbosity={verbosity})\
 """
     )
 
@@ -306,13 +301,13 @@ with test_env as te:
                  append_main=False, verbosity=1):
         # All paths are desired to be absolute.
         ext_paths = [path for path in ext_paths]  # accept iterator, etc.
-        if append_main:
-            exec_stmt = self.EXEC_FORMAT_WITH_MAIN.format(verbosity=verbosity)
-        else:
-            exec_stmt = self.EXEC_FORMAT
-        script = self.TEST_PROXY_FORMAT.format(ext_paths=ext_paths,
-                                               target_filepath=target_filepath,
-                                               exec_stmt=exec_stmt)
+        exec_stmt = self.PROXY_FORMAT_EXEC.format(
+            target_filepath=target_filepath,
+            append_main=append_main,
+            verbosity=verbosity,
+        )
+        script = self.PROXY_FORMAT_COMMON.format(ext_paths=ext_paths,
+                                           exec_stmt=exec_stmt)
         RWFreeNamedTempFile.__init__(self, source=script)
 
 
@@ -324,7 +319,7 @@ def _execute_test(testfile_path, ext_paths=tuple(), append_main=False,
                   verbosity=1):
     """
     Execute test script, with invoking executable
-    & given path sextension by subprocessing.
+    & given paths extension by subprocessing.
     """
     logger.info('will execute test: {}'.format(testfile_path))
     ext_paths = [path for path in ext_paths]  # accept iterator, etc.
@@ -337,6 +332,23 @@ def _execute_test(testfile_path, ext_paths=tuple(), append_main=False,
                    verbosity=verbosity) as proxy_filename:
         subprocess.call([sys.executable, proxy_filename])
 
+def _run_testsuites(testfile_paths, ext_paths=tuple(), verbosity=1):
+    """
+    Execute tests, by aggregating test suites from target scripts,
+    & running with given paths extension.
+    """
+    import unittest
+    loader = unittest.TestLoader()
+    ext_paths = [path for path in ext_paths]  # accept iterator, etc.
+    with PathEnvironment(ext_paths=ext_paths) as env:
+        suites = []
+        for testfile_path in testfile_paths:
+            logger.info('load test suites from: {}'.format(testfile_path))
+            test_module = _get_module_from_path(testfile_path, env)
+            suites.append(loader.loadTestsFromModule(test_module))
+        aggregated = unittest.TestSuite(suites)
+        unittest.TextTestRunner(verbosity=verbosity).run(aggregated)
+
 
 class TestRunner(object):
     """
@@ -345,7 +357,8 @@ class TestRunner(object):
     """
 
     def __init__(self, test_paths=('./tests',), sitelib_paths=('./sitelib',),
-                 rcfile_encoding='utf-8', append_main=False, verbosity=1):
+                 rcfile_encoding='utf-8', append_main=False, verbosity=1,
+                 suite_autoload=False):
         # Extend common library pahts.
         self._library_paths = []
         for sitelib_dir in sitelib_paths:
@@ -361,7 +374,10 @@ class TestRunner(object):
             self._tests[test_dir] = _find_tests(test_dir)
             self._ext_paths[test_dir] = _load_extdir(test_dir, rcfile_encoding, '.testfor')
         # Save extra arguments.
+        if append_main is True and suite_autoload is True:
+            raise RuntimeError('confusing auto-exec options')
         self._append_main = append_main
+        self._suite_autoload = suite_autoload
         self._verbosity = verbosity
 
     def execute_all(self):
@@ -371,11 +387,18 @@ class TestRunner(object):
             # Setup full extension paths set.
             ext_paths = self._ext_paths[context]
             ext_paths.extend(library_paths)
-            # Iterate over tests.
-            for testfile_path in tests:
-                _execute_test(testfile_path, ext_paths=ext_paths,
-                              append_main=self._append_main,
-                              verbosity=self._verbosity)
+            if self._suite_autoload:
+                _run_testsuites(
+                    tests,
+                    ext_paths=ext_paths,
+                    verbosity=self._verbosity,
+                )
+            else:
+                # Iterate over tests.
+                for testfile_path in tests:
+                    _execute_test(testfile_path, ext_paths=ext_paths,
+                                  append_main=self._append_main,
+                                  verbosity=self._verbosity)
 
     def execute_by_path(self, testfile_path):
         """Execute a specifiv test by given path."""
@@ -387,9 +410,16 @@ class TestRunner(object):
                     # Setup full extension paths set.
                     ext_paths = self._ext_paths[context]
                     ext_paths.extend(self._library_paths)
-                    _execute_test(abs_testfile_path, ext_paths=ext_paths,
-                                  append_main=self._append_main,
-                                  verbosity=self._verbosity)
+                    if self._suite_autoload:
+                        _run_testsuites(
+                            [test_path],
+                            ext_paths=ext_paths,
+                            verbosity=self._verbosity,
+                        )
+                    else:
+                        _execute_test(abs_testfile_path, ext_paths=ext_paths,
+                                      append_main=self._append_main,
+                                      verbosity=self._verbosity)
                     return
             # If the path not found.
             logger.error('test not found: {}'.format(abs_testfile_path))
@@ -405,7 +435,8 @@ class TestRunner(object):
 @configured(args_from_config={
                 'test.testdirs': ('test_paths', semicolon_to_dirlist),
                 'test.extdirs': ('sitelib_paths', semicolon_to_dirlist),
-                'test.autoexec': ('append_main', state_to_boolean),
+                'test.appendmain': ('append_main', state_to_boolean),
+                'test.autoexec': ('suite_autoload', state_to_boolean),
                 'test.verbosity': ('verbosity', int),
             })
 class ConfiguredTestRunner(TestRunner):
@@ -473,9 +504,12 @@ def test():
     parser.add_argument('-t', '--testdir', help='target test directory paths', nargs='*')
     parser.add_argument('-l', '--libext', help='Library extension paths', nargs='*')
     parser.add_argument('-e', '--encoding', help='.sitelibs file encoding')
+    parser.add_argument('--appendmain', action='store_true', default=False,
+                        help='auto-exec tests by appending command-line interfaces to test scripts '
+                             '(exec twice if provided)')
     parser.add_argument('-a', '--autoexec', action='store_true', default=False,
                         help='auto-exec tests without command-line interfaces on scripts '
-                                '(exec twice if provided)')
+                             '(exec twice if provided)')
     parser.add_argument('-v', '--verbosity', type=int, help='verbosity for unittest.main')
     args = parser.parse_args()
     # Execute target.
@@ -486,8 +520,12 @@ def test():
         kwargs['sitelib_paths'] = args.libext
     if args.encoding:
         kwargs['rcfile_encoding'] = args.encoding
-    if args.autoexec:
-        kwargs['append_main'] = args.autoexec
+    if args.appendmain:
+        # Append-main option precedes if provided.
+        kwargs['append_main'] = args.appendmain
+        kwargs['suite_autoload'] = False
+    elif args.autoexec:
+        kwargs['suite_autoload'] = args.autoexec
     if args.verbosity:
         kwargs['verbosity'] = args.verbosity
     test_runner = ConfiguredTestRunner(**kwargs)

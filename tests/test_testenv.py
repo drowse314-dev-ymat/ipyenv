@@ -121,6 +121,17 @@ class PartialRCTest(TestEnvironmentTest):
                       )
 
 
+class TestAutoexecMode(unittest.TestCase):
+    """Tests for auto-exec mode configuration."""
+
+    def test_confusing_mode_args(self):
+        """Assert confusing mode options not accepted."""
+        with self.assertRaises(RuntimeError):
+            ipyenv.TestRunner(
+                append_main=True, suite_autoload=True
+            )
+
+
 class TestAppendingMain(unittest.TestCase):
     """
     Testing TestProxy, set on its funcionality appending `unittest.main`.
@@ -178,8 +189,30 @@ class RCTestAppendingMain(TestAppendingMain):
 
     def setUp(self):
         self.test_runner = ipyenv.ConfiguredTestRunner(
+                               config_path='./ipyenvrc_for_test_appendmain',
+                           )
+
+
+class TestSuiteAutoload(TestAppendingMain):
+    """
+    Tests for test suite auto-loading.
+    """
+
+    def setUp(self):
+        self.test_runner = ipyenv.TestRunner(
+            test_paths=(os.sep.join((os.path.dirname(os.path.realpath(__file__)),
+                                     'nose-like-tests')),),
+            sitelib_paths=(os.sep.join((os.path.dirname(os.path.realpath(__file__)),
+                                        'sitelib')),),
+            suite_autoload=True
+        )
+
+
+class RCTestSuiteAutoload(TestAppendingMain):
+
+    def setUp(self):
+        self.test_runner = ipyenv.ConfiguredTestRunner(
                                config_path='./ipyenvrc_for_test_noselike',
-                               append_main=True
                            )
 
 

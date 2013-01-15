@@ -1,0 +1,10 @@
+# library extension directory
+[libext]
+extdirs=./tests/sitelib
+
+# test scripts directory
+[test]
+extdirs=./tests/sitelib
+testdirs=./tests/nose-like-tests
+appendmain=on
+verbosity=1
