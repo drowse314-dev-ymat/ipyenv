@@ -84,7 +84,7 @@ or with a test script path::
 
     $ ipy ipyenv.py test -n tests/test_mod_top.py
 
-In this way, test scripts must provide command-line interfaces like ``unittest.main``.
+In these ways, test scripts must provide command-line interfaces like ``unittest.main``.
 If you do not want to write those extra lines you should add some options::
 
     $ ipy ipyenv.py test --autoexec -v <verbosity>
@@ -95,7 +95,7 @@ Test cases loaded with this option equal to those when you write up::
         from unittest import main
         main(verbosity=<verbosity>)
 
-at the bottom of your test scripts.
+at the bottom of your test scripts, but will be executed in a more aggregative way.
 
 Setup with configuration
 ------------------------
