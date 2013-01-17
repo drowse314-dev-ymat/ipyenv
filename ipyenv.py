@@ -33,7 +33,7 @@ __all__ = [
     'ConfiguredTestRunner',
 ]
 
-__version__ = '0.6.0'
+__version__ = '0.6.2'
 
 
 # Config logger.
@@ -506,10 +506,10 @@ def test():
     parser.add_argument('-e', '--encoding', help='.sitelibs file encoding')
     parser.add_argument('--appendmain', action='store_true', default=False,
                         help='auto-exec tests by appending command-line interfaces to test scripts '
-                             '(exec twice if provided)')
+                             '(exec twice if originally provided)')
     parser.add_argument('-a', '--autoexec', action='store_true', default=False,
-                        help='auto-exec tests without command-line interfaces on scripts '
-                             '(exec twice if provided)')
+                        help='auto-exec tests without command-line interfaces on scripts by test-suites loading '
+                             '(exec twice if originally provided)')
     parser.add_argument('-v', '--verbosity', type=int, help='verbosity for unittest.main')
     args = parser.parse_args()
     # Execute target.
