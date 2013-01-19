@@ -33,7 +33,7 @@ __all__ = [
     'ConfiguredTestRunner',
 ]
 
-__version__ = '0.6.2'
+__version__ = '0.6.3'
 
 
 # Config logger.
@@ -178,19 +178,6 @@ class ConfiguredLibraryEnvironment(LibraryEnvironment):
     pass
 
 
-# Test script filename patterns.
-RE_TEST_SCRIPT_NAME = re.compile('^[Tt]est.*\.py$')
-
-def _find_tests(test_dir):
-    """Find recursively test scripts under the given path."""
-    test_paths = []
-    for root, dirs, files in os.walk(test_dir):
-        for filename in files:
-            if RE_TEST_SCRIPT_NAME.search(filename):
-                test_paths.append(os.sep.join((root, filename)))
-    return test_paths
-
-
 def _get_module_from_path(target_filename, env):
 
     path_components = os.path.split(target_filename)
@@ -311,45 +298,6 @@ with test_env as te:
         RWFreeNamedTempFile.__init__(self, source=script)
 
 
-def _escape_path(path):
-    """Path separator escaping in Windows."""
-    return path.replace('\\', '\\\\')
-
-def _execute_test(testfile_path, ext_paths=tuple(), append_main=False,
-                  verbosity=1):
-    """
-    Execute test script, with invoking executable
-    & given paths extension by subprocessing.
-    """
-    logger.info('will execute test: {}'.format(testfile_path))
-    ext_paths = [path for path in ext_paths]  # accept iterator, etc.
-    # `_escape_path` only applied to  `testfile_path`:
-    #     Built-in `open` never accepts unescaped special characters,
-    #     while a sequence of `list.__repr__` -> `str.format` does.
-    with TestProxy(_escape_path(testfile_path),
-                   ext_paths=ext_paths,
-                   append_main=append_main,
-                   verbosity=verbosity) as proxy_filename:
-        subprocess.call([sys.executable, proxy_filename])
-
-def _run_testsuites(testfile_paths, ext_paths=tuple(), verbosity=1):
-    """
-    Execute tests, by aggregating test suites from target scripts,
-    & running with given paths extension.
-    """
-    import unittest
-    loader = unittest.TestLoader()
-    ext_paths = [path for path in ext_paths]  # accept iterator, etc.
-    with PathEnvironment(ext_paths=ext_paths) as env:
-        suites = []
-        for testfile_path in testfile_paths:
-            logger.info('load test suites from: {}'.format(testfile_path))
-            test_module = _get_module_from_path(testfile_path, env)
-            suites.append(loader.loadTestsFromModule(test_module))
-        aggregated = unittest.TestSuite(suites)
-        unittest.TextTestRunner(verbosity=verbosity).run(aggregated)
-
-
 class TestRunner(object):
     """
     Implements test runner functionality.
@@ -371,7 +319,7 @@ class TestRunner(object):
                 logger.error('tests directory "{}" not found'.format(test_dir))
                 continue
             test_dir = os.path.abspath(test_dir)
-            self._tests[test_dir] = _find_tests(test_dir)
+            self._tests[test_dir] = self._find_tests(test_dir)
             self._ext_paths[test_dir] = _load_extdir(test_dir, rcfile_encoding, '.testfor')
         # Save extra arguments.
         if append_main is True and suite_autoload is True:
@@ -379,6 +327,18 @@ class TestRunner(object):
         self._append_main = append_main
         self._suite_autoload = suite_autoload
         self._verbosity = verbosity
+
+    # Test script filename patterns.
+    RE_TEST_SCRIPT_NAME = re.compile('^[Tt]est.*\.py$')
+
+    def _find_tests(self, test_dir):
+        """Find recursively test scripts under the given path."""
+        test_paths = []
+        for root, dirs, files in os.walk(test_dir):
+            for filename in files:
+                if self.RE_TEST_SCRIPT_NAME.search(filename):
+                    test_paths.append(os.sep.join((root, filename)))
+        return test_paths
 
     def execute_all(self):
         """Execute all tests found."""
@@ -388,7 +348,7 @@ class TestRunner(object):
             ext_paths = self._ext_paths[context]
             ext_paths.extend(library_paths)
             if self._suite_autoload:
-                _run_testsuites(
+                self._run_testsuites(
                     tests,
                     ext_paths=ext_paths,
                     verbosity=self._verbosity,
@@ -396,9 +356,9 @@ class TestRunner(object):
             else:
                 # Iterate over tests.
                 for testfile_path in tests:
-                    _execute_test(testfile_path, ext_paths=ext_paths,
-                                  append_main=self._append_main,
-                                  verbosity=self._verbosity)
+                    self._execute_test(testfile_path, ext_paths=ext_paths,
+                                       append_main=self._append_main,
+                                       verbosity=self._verbosity)
 
     def execute_by_path(self, testfile_path):
         """Execute a specifiv test by given path."""
@@ -411,18 +371,56 @@ class TestRunner(object):
                     ext_paths = self._ext_paths[context]
                     ext_paths.extend(self._library_paths)
                     if self._suite_autoload:
-                        _run_testsuites(
+                        self._run_testsuites(
                             [test_path],
                             ext_paths=ext_paths,
                             verbosity=self._verbosity,
                         )
                     else:
-                        _execute_test(abs_testfile_path, ext_paths=ext_paths,
-                                      append_main=self._append_main,
-                                      verbosity=self._verbosity)
+                        self._execute_test(abs_testfile_path, ext_paths=ext_paths,
+                                           append_main=self._append_main,
+                                           verbosity=self._verbosity)
                     return
             # If the path not found.
             logger.error('test not found: {}'.format(abs_testfile_path))
+
+    def _escape_path(self, path):
+        """Path separator escaping in Windows."""
+        return path.replace('\\', '\\\\')
+
+    def _execute_test(self, testfile_path, ext_paths=tuple(),
+                      append_main=False, verbosity=1):
+        """
+        Execute test script, with invoking executable
+        & given paths extension by subprocessing.
+        """
+        logger.info('will execute test: {}'.format(testfile_path))
+        ext_paths = [path for path in ext_paths]  # accept iterator, etc.
+        # `_escape_path` only applied to  `testfile_path`:
+        #     Built-in `open` never accepts unescaped special characters,
+        #     while a sequence of `list.__repr__` -> `str.format` does.
+        with TestProxy(self._escape_path(testfile_path),
+                       ext_paths=ext_paths,
+                       append_main=append_main,
+                       verbosity=verbosity) as proxy_filename:
+            subprocess.call([sys.executable, proxy_filename])
+
+    def _run_testsuites(self, testfile_paths, ext_paths=tuple(), verbosity=1):
+        """
+        Execute tests, by aggregating test suites from target scripts,
+        & running with given paths extension.
+        """
+        import unittest
+        loader = unittest.TestLoader()
+        ext_paths = [path for path in ext_paths]  # accept iterator, etc.
+        with PathEnvironment(ext_paths=ext_paths) as env:
+            suites = []
+            for testfile_path in testfile_paths:
+                logger.info('load test suites from: {}'.format(testfile_path))
+                test_module = _get_module_from_path(testfile_path, env)
+                suites.append(loader.loadTestsFromModule(test_module))
+            aggregated = unittest.TestSuite(suites)
+            unittest.TextTestRunner(verbosity=verbosity).run(aggregated)
 
     @property
     def ext_paths(self):
