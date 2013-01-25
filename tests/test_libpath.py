@@ -9,6 +9,7 @@ import os
 sys.path.append(os.path.abspath('../')) # works well in IronPython.
 sys.path.append(os.path.abspath('.'))   # works well in the others.
 import ipyenv
+import helper
 
 # Cancel logging.
 import logging
@@ -36,8 +37,7 @@ class LibraryEnvironmentTest(unittest.TestCase):
 
     def setUp(self):
         self.env = ipyenv.LibraryEnvironment(
-            sitelib_paths=(os.sep.join((os.path.dirname(os.path.realpath(__file__)),
-                                        'sitelib')),)
+            sitelib_paths=(helper.get_abspath_from('sitelib'),)
         )
 
     def tearDown(self):
@@ -102,7 +102,7 @@ class RCTest(LibraryEnvironmentTest):
 
     def setUp(self):
         self.env = ipyenv.ConfiguredLibraryEnvironment(
-                       config_path='./ipyenvrc_for_test'
+                       config_path=helper.get_abspath_from('./ipyenvrc_for_test')
                    )
 
 
@@ -113,12 +113,12 @@ class PartialRCTest(unittest.TestCase):
 
     def test_partial_config(self):
         env = ipyenv.ConfiguredLibraryEnvironment(
-                  config_path='./ipyenvrc_for_test_partial'
+                  config_path=helper.get_abspath_from('./ipyenvrc_for_test_partial')
               )
 
     def test_section_lacking_config(self):
         env = ipyenv.ConfiguredLibraryEnvironment(
-                  config_path='./ipyenvrc_for_test_lackingsection'
+                  config_path=helper.get_abspath_from('./ipyenvrc_for_test_lackingsection')
               )
 
 
