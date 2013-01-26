@@ -9,19 +9,11 @@ import os
 sys.path.append(os.path.abspath('../')) # works well in IronPython.
 sys.path.append(os.path.abspath('.'))   # works well in the others.
 import ipyenv
+import helper
 
 # Cancel logging.
 import logging
 ipyenv.create_logger(logging.CRITICAL)
-
-def _abspath(relpath_from_file):
-    """Get absolute path."""
-    return os.sep.join(
-        (
-            os.path.dirname(os.path.realpath(__file__)),
-            relpath_from_file
-        )
-    )
 
 
 class TestEnvironmentTest(unittest.TestCase):
@@ -32,8 +24,9 @@ class TestEnvironmentTest(unittest.TestCase):
 
     def setUp(self):
         self.test_runner = ipyenv.TestRunner(
-            test_paths=(_abspath('tests'),),
-            sitelib_paths=(_abspath('sitelib'),),
+            test_paths=(helper.get_abspath_from('tests'),),
+            sitelib_paths=(helper.get_abspath_from('sitelib'),),
+            suite_autoload=False,  #  Defaults to True from v0.7.0.
         )
 
     def tearDown(self):
@@ -108,7 +101,7 @@ class RCTest(TestEnvironmentTest):
 
     def setUp(self):
         self.test_runner = ipyenv.ConfiguredTestRunner(
-                               config_path=_abspath('./ipyenvrc_for_test'),
+                               config_path=helper.get_abspath_from('./ipyenvrc_for_test'),
                            )
 
 
@@ -119,12 +112,12 @@ class PartialRCTest(TestEnvironmentTest):
 
     def test_partial_config(self):
         test_runner = ipyenv.ConfiguredTestRunner(
-                               config_path=_abspath('./ipyenvrc_for_test_partial'),
+                               config_path=helper.get_abspath_from('./ipyenvrc_for_test_partial'),
                       )
 
     def test_section_lacking_config(self):
         test_runner = ipyenv.ConfiguredTestRunner(
-                               config_path=_abspath('./ipyenvrc_for_test_lackingsection'),
+                               config_path=helper.get_abspath_from('./ipyenvrc_for_test_lackingsection'),
                       )
 
 
@@ -146,9 +139,10 @@ class TestAppendingMain(unittest.TestCase):
 
     def setUp(self):
         self.test_runner = ipyenv.TestRunner(
-            test_paths=(_abspath('nose-like-tests'),),
-            sitelib_paths=(_abspath('sitelib'),),
-            append_main=True
+            test_paths=(helper.get_abspath_from('nose-like-tests'),),
+            sitelib_paths=(helper.get_abspath_from('sitelib'),),
+            append_main=True,
+            suite_autoload=False
         )
 
     def test_run_all_tests(self):
@@ -194,7 +188,7 @@ class RCTestAppendingMain(TestAppendingMain):
 
     def setUp(self):
         self.test_runner = ipyenv.ConfiguredTestRunner(
-                               config_path=_abspath('./ipyenvrc_for_test_appendmain'),
+                               config_path=helper.get_abspath_from('./ipyenvrc_for_test_appendmain'),
                            )
 
 
@@ -205,8 +199,8 @@ class TestSuiteAutoload(TestAppendingMain):
 
     def setUp(self):
         self.test_runner = ipyenv.TestRunner(
-            test_paths=(_abspath('nose-like-tests'),),
-            sitelib_paths=(_abspath('sitelib'),),
+            test_paths=(helper.get_abspath_from('nose-like-tests'),),
+            sitelib_paths=(helper.get_abspath_from('sitelib'),),
             suite_autoload=True
         )
 
@@ -215,7 +209,7 @@ class RCTestSuiteAutoload(TestAppendingMain):
 
     def setUp(self):
         self.test_runner = ipyenv.ConfiguredTestRunner(
-                               config_path=_abspath('./ipyenvrc_for_test_noselike'),
+                               config_path=helper.get_abspath_from('./ipyenvrc_for_test_noselike'),
                            )
 
 
