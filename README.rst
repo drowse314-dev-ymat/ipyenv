@@ -89,7 +89,7 @@ with some integer::
 
     $ ipy ipyenv.py test -v <verbosity>
 
-Test cases loaded with this option equal to those when you write up::
+Test cases loaded with these commands equal to those when you write up::
 
     if __name__ == '__main__:
         from unittest import main
