@@ -84,10 +84,10 @@ or with a test script path::
 
     $ ipy ipyenv.py test -n tests/test_mod_top.py
 
-In these ways, test scripts must provide command-line interfaces like ``unittest.main``.
-If you do not want to write those extra lines you should add some options::
+If you need more detailed or omitted reports, you should add -v option
+with some integer::
 
-    $ ipy ipyenv.py test --autoexec -v <verbosity>
+    $ ipy ipyenv.py test -v <verbosity>
 
 Test cases loaded with this option equal to those when you write up::
 
