@@ -6,5 +6,6 @@ extdirs=./tests/sitelib
 [test]
 extdirs=./tests/sitelib
 testdirs=./tests/nose-like-tests
+# "appendmain" option cancels "autoexec"
 appendmain=on
 verbosity=1

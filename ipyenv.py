@@ -33,7 +33,7 @@ __all__ = [
     'ConfiguredTestRunner',
 ]
 
-__version__ = '0.6.4'
+__version__ = '0.7.0'
 
 
 # Config logger.
@@ -122,7 +122,7 @@ def state_to_boolean(notation):
         raise ValueError('Not a boolean: {}'.format(notation))
     return BOOLEAN_STATES[notation.lower()]
 
-def configured(args_from_config=None):
+def configured(args_from_config=None, post_processors=tuple()):
     """
     Makes a wrapper for some environment class to instantiate with given
     configuration file. The argument `args_from_config` must be formed:
@@ -150,6 +150,9 @@ def configured(args_from_config=None):
                     pass
             # Given arguments precede.
             kwargs_from_config.update(given_args)
+            # Apply post processors.
+            for processor in post_processors:
+                kwargs_from_config = processor(kwargs_from_config)
             return klass(**kwargs_from_config)
         instantiate.__doc__ = klass.__doc__
         return instantiate
@@ -306,7 +309,7 @@ class TestRunner(object):
 
     def __init__(self, test_paths=('./tests',), sitelib_paths=('./sitelib',),
                  rcfile_encoding='utf-8', append_main=False, verbosity=1,
-                 suite_autoload=False):
+                 suite_autoload=True):
         # Extend common library pahts.
         self._library_paths = []
         for sitelib_dir in sitelib_paths:
@@ -429,6 +432,14 @@ class TestRunner(object):
                                 [list(dirs) for dirs in self._ext_paths.values()]) \
                + self._library_paths
 
+    @staticmethod
+    def autoexec_optarrange(options):
+        """Resolve `autoexec` option conflicts."""
+        # Append-main option precedes if provided.
+        if options.get('append_main', False):
+            options.setdefault('suite_autoload', False)
+        return options
+
 
 @configured(args_from_config={
                 'test.testdirs': ('test_paths', semicolon_to_dirlist),
@@ -436,7 +447,10 @@ class TestRunner(object):
                 'test.appendmain': ('append_main', state_to_boolean),
                 'test.autoexec': ('suite_autoload', state_to_boolean),
                 'test.verbosity': ('verbosity', int),
-            })
+            },
+            post_processors=[
+                TestRunner.autoexec_optarrange,
+            ])
 class ConfiguredTestRunner(TestRunner):
     """TestRunner configured with .ipyenvrc."""
     pass
@@ -519,13 +533,12 @@ def test():
     if args.encoding:
         kwargs['rcfile_encoding'] = args.encoding
     if args.appendmain:
-        # Append-main option precedes if provided.
         kwargs['append_main'] = args.appendmain
-        kwargs['suite_autoload'] = False
     elif args.autoexec:
         kwargs['suite_autoload'] = args.autoexec
     if args.verbosity:
         kwargs['verbosity'] = args.verbosity
+    kwargs = TestRunner.autoexec_optarrange(kwargs)
     test_runner = ConfiguredTestRunner(**kwargs)
     if args.name:
         test_runner.execute_by_path(args.name)

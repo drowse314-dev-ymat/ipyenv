@@ -26,6 +26,7 @@ class TestEnvironmentTest(unittest.TestCase):
         self.test_runner = ipyenv.TestRunner(
             test_paths=(helper.get_abspath_from('tests'),),
             sitelib_paths=(helper.get_abspath_from('sitelib'),),
+            suite_autoload=False,  #  Defaults to True from v0.7.0.
         )
 
     def tearDown(self):
@@ -140,7 +141,8 @@ class TestAppendingMain(unittest.TestCase):
         self.test_runner = ipyenv.TestRunner(
             test_paths=(helper.get_abspath_from('nose-like-tests'),),
             sitelib_paths=(helper.get_abspath_from('sitelib'),),
-            append_main=True
+            append_main=True,
+            suite_autoload=False
         )
 
     def test_run_all_tests(self):
