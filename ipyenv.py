@@ -296,8 +296,10 @@ with test_env as te:
             append_main=append_main,
             verbosity=verbosity,
         )
-        script = self.PROXY_FORMAT_COMMON.format(ext_paths=ext_paths,
-                                           exec_stmt=exec_stmt)
+        script = self.PROXY_FORMAT_COMMON.format(
+            ext_paths=ext_paths,
+            exec_stmt=exec_stmt
+        )
         RWFreeNamedTempFile.__init__(self, source=script)
 
 
