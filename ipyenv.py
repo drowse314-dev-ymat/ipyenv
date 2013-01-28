@@ -547,6 +547,73 @@ def test():
     else:
         test_runner.execute_all()
 
+def showconfig():
+    """Show environment configs being applied."""
+    # CLI configs.
+    parser = argparse.ArgumentParser(
+        description='ipyenv v{}: Show environment configs being applied'.format(__version__)
+    )
+    parser.add_argument('showconfig') # ignore this.
+    parser.add_argument('-e', '--encoding', help='config file encoding')
+    parser.add_argument('-l', '--libext', type=state_to_boolean, default=True,
+                        help='print library extension configuration')
+    parser.add_argument('-t', '--test', type=state_to_boolean, default=True,
+                        help='print test runner configuration')
+    args = parser.parse_args()
+    kwargs = {}
+    if args.encoding:
+        kwargs['rcfile_encoding'] = args.encoding
+    print("======================================================================")
+    print("  show ipyenv configuration  ")
+    print("======================================================================")
+    # Library envitonment.
+    if args.libext:
+        print("")
+        print(">>> Load libext configs (for `shell` and `exec`) ...")
+        lib_env = ConfiguredLibraryEnvironment(**kwargs)
+        ext_paths = lib_env.ext_paths
+        print("configured {} library extensions.".format(len(ext_paths)))
+        print("----------------------------------------------------------------------")
+        for path in ext_paths:
+            print(
+              '    + path extension: "{}"'.format(path)
+            )
+        print("----------------------------------------------------------------------")
+        print("<<< finished.")
+    # Test environment.
+    if args.test:
+        print("")
+        print(">>> Load test configs (for `test`) ...")
+        test_env = ConfiguredTestRunner(**kwargs)
+        common_ext_paths = test_env._library_paths
+        print(">> configured {} common library extensions.".format(len(common_ext_paths)))
+        print("----------------------------------------------------------------------")
+        for path in common_ext_paths:
+            print(
+              '    + path extension: "{}"'.format(path)
+            )
+        print(">> configured {} test direcroty.".format(len(test_env._tests)))
+        print("----------------------------------------------------------------------")
+        for test_path in test_env._tests:
+            test_targets = test_env._ext_paths[test_path]
+            tests = test_env._tests[test_path]
+            print('    * load tests from "{}"...'.format(test_path))
+            print("    ------------------------------------------------")
+            print("        -- {} test target (path extensions):".format(len(test_targets)))
+            print("           -----------------------------------------")
+            for test_target in test_targets:
+                print(
+                  '            + "{}"'.format(test_target)
+                )
+            print("        -- found {} tests:".format(len(tests)))
+            print("           -----------------------------------------")
+            for test_filepath in tests:
+                print(
+                  '            + "{}"'.format(test_filepath)
+                )
+        print("----------------------------------------------------------------------")
+        print("<<< finished.")
+
 
 if __name__ == '__main__':
     # Command-line interfaces.
@@ -558,11 +625,13 @@ if __name__ == '__main__':
         'shell',
         'exec',
         'test',
+        'showconfig',
     )
     action_funcs = {
         'shell': shell,
         'exec': execute,
         'test': test,
+        'showconfig': showconfig,
     }
     parser.add_argument('action',
                         help='ACTION: ( {} )'.format(', '.join(actions)),
