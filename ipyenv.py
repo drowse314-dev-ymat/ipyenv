@@ -491,7 +491,7 @@ def execute():
     parser.add_argument('exec') # ignore this.
     parser.add_argument('target_script')
     parser.add_argument('-l', '--libext', help='Library extension paths', nargs='*')
-    parser.add_argument('-e', '--encoding', help='.sitelibs file encoding')
+    parser.add_argument('-e', '--encoding', help='rcfile encoding')
     args = parser.parse_args()
     target = args.target_script
     if not os.path.exists(target):
@@ -517,7 +517,7 @@ def test():
     parser.add_argument('-n', '--name', help='target test script name/path')
     parser.add_argument('-t', '--testdir', help='target test directory paths', nargs='*')
     parser.add_argument('-l', '--libext', help='Library extension paths', nargs='*')
-    parser.add_argument('-e', '--encoding', help='.sitelibs file encoding')
+    parser.add_argument('-e', '--encoding', help='rcfile encoding')
     parser.add_argument('--appendmain', action='store_true', default=False,
                         help='auto-exec tests by appending command-line interfaces to test scripts '
                              '(exec twice if originally provided)')
