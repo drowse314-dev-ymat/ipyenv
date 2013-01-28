@@ -51,7 +51,7 @@ def run_testsuites(testfile_paths, verbosity):
     loader = unittest.TestLoader()
     suites = []
     for testfile_path in testfile_paths:
-        logger.info('load test suites from: {}'.format(testfile_path))
+        logger.info('load test suites from: "{}"'.format(testfile_path))
         test_module = get_module_from_path(testfile_path)
         suites.append(loader.loadTestsFromModule(test_module))
     aggregated = unittest.TestSuite(suites)

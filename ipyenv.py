@@ -33,7 +33,7 @@ __all__ = [
     'ConfiguredTestRunner',
 ]
 
-__version__ = '0.7.1'
+__version__ = '0.8.0'
 
 
 # Config logger.
@@ -387,7 +387,7 @@ class TestRunner(object):
                                            verbosity=self._verbosity)
                     return
             # If the path not found.
-            logger.error('test not found: {}'.format(abs_testfile_path))
+            logger.error('test not found: "{}"'.format(abs_testfile_path))
 
     def _escape_path(self, path):
         """Path separator escaping in Windows."""
@@ -399,7 +399,7 @@ class TestRunner(object):
         Execute test script, with invoking executable
         & given paths extension by subprocessing.
         """
-        logger.info('will execute test: {}'.format(testfile_path))
+        logger.info('will execute test: "{}"'.format(testfile_path))
         ext_paths = [path for path in ext_paths]  # accept iterator, etc.
         # `_escape_path` only applied to  `testfile_path`:
         #     Built-in `open` never accepts unescaped special characters,
@@ -421,7 +421,7 @@ class TestRunner(object):
         with PathEnvironment(ext_paths=ext_paths) as env:
             suites = []
             for testfile_path in testfile_paths:
-                logger.info('load test suites from: {}'.format(testfile_path))
+                logger.info('load test suites from: "{}"'.format(testfile_path))
                 test_module = _get_module_from_path(testfile_path, env)
                 suites.append(loader.loadTestsFromModule(test_module))
             aggregated = unittest.TestSuite(suites)
@@ -491,11 +491,11 @@ def execute():
     parser.add_argument('exec') # ignore this.
     parser.add_argument('target_script')
     parser.add_argument('-l', '--libext', help='Library extension paths', nargs='*')
-    parser.add_argument('-e', '--encoding', help='.sitelibs file encoding')
+    parser.add_argument('-e', '--encoding', help='rcfile encoding')
     args = parser.parse_args()
     target = args.target_script
     if not os.path.exists(target):
-        logger.error('target script not found: {}'.format(target))
+        logger.error('target script not found: "{}"'.format(target))
         return
     # Execute target.
     kwargs = {}
@@ -517,7 +517,7 @@ def test():
     parser.add_argument('-n', '--name', help='target test script name/path')
     parser.add_argument('-t', '--testdir', help='target test directory paths', nargs='*')
     parser.add_argument('-l', '--libext', help='Library extension paths', nargs='*')
-    parser.add_argument('-e', '--encoding', help='.sitelibs file encoding')
+    parser.add_argument('-e', '--encoding', help='rcfile encoding')
     parser.add_argument('--appendmain', action='store_true', default=False,
                         help='auto-exec tests by appending command-line interfaces to test scripts '
                              '(exec twice if originally provided)')
@@ -547,6 +547,73 @@ def test():
     else:
         test_runner.execute_all()
 
+def showconfig():
+    """Show environment configs being applied."""
+    # CLI configs.
+    parser = argparse.ArgumentParser(
+        description='ipyenv v{}: Show environment configs being applied'.format(__version__)
+    )
+    parser.add_argument('showconfig') # ignore this.
+    parser.add_argument('-e', '--encoding', help='config file encoding')
+    parser.add_argument('-l', '--libext', type=state_to_boolean, default=True,
+                        help='print library extension configuration')
+    parser.add_argument('-t', '--test', type=state_to_boolean, default=True,
+                        help='print test runner configuration')
+    args = parser.parse_args()
+    kwargs = {}
+    if args.encoding:
+        kwargs['rcfile_encoding'] = args.encoding
+    print("======================================================================")
+    print("  show ipyenv configuration  ")
+    print("======================================================================")
+    # Library envitonment.
+    if args.libext:
+        print("")
+        print(">>> Load libext configs (for `shell` and `exec`) ...")
+        lib_env = ConfiguredLibraryEnvironment(**kwargs)
+        ext_paths = lib_env.ext_paths
+        print("configured {} library extensions.".format(len(ext_paths)))
+        print("----------------------------------------------------------------------")
+        for path in ext_paths:
+            print(
+              '    + path extension: "{}"'.format(path)
+            )
+        print("----------------------------------------------------------------------")
+        print("<<< finished.")
+    # Test environment.
+    if args.test:
+        print("")
+        print(">>> Load test configs (for `test`) ...")
+        test_env = ConfiguredTestRunner(**kwargs)
+        common_ext_paths = test_env._library_paths
+        print(">> configured {} common library extensions.".format(len(common_ext_paths)))
+        print("----------------------------------------------------------------------")
+        for path in common_ext_paths:
+            print(
+              '    + path extension: "{}"'.format(path)
+            )
+        print(">> configured {} test direcroty.".format(len(test_env._tests)))
+        print("----------------------------------------------------------------------")
+        for test_path in test_env._tests:
+            test_targets = test_env._ext_paths[test_path]
+            tests = test_env._tests[test_path]
+            print('    * load tests from "{}"...'.format(test_path))
+            print("    ------------------------------------------------")
+            print("        -- {} test target (path extensions):".format(len(test_targets)))
+            print("           -----------------------------------------")
+            for test_target in test_targets:
+                print(
+                  '            + "{}"'.format(test_target)
+                )
+            print("        -- found {} tests:".format(len(tests)))
+            print("           -----------------------------------------")
+            for test_filepath in tests:
+                print(
+                  '            + "{}"'.format(test_filepath)
+                )
+        print("----------------------------------------------------------------------")
+        print("<<< finished.")
+
 
 if __name__ == '__main__':
     # Command-line interfaces.
@@ -558,11 +625,13 @@ if __name__ == '__main__':
         'shell',
         'exec',
         'test',
+        'showconfig',
     )
     action_funcs = {
         'shell': shell,
         'exec': execute,
         'test': test,
+        'showconfig': showconfig,
     }
     parser.add_argument('action',
                         help='ACTION: ( {} )'.format(', '.join(actions)),
