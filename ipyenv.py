@@ -387,7 +387,7 @@ class TestRunner(object):
                                            verbosity=self._verbosity)
                     return
             # If the path not found.
-            logger.error('test not found: {}'.format(abs_testfile_path))
+            logger.error('test not found: "{}"'.format(abs_testfile_path))
 
     def _escape_path(self, path):
         """Path separator escaping in Windows."""
@@ -399,7 +399,7 @@ class TestRunner(object):
         Execute test script, with invoking executable
         & given paths extension by subprocessing.
         """
-        logger.info('will execute test: {}'.format(testfile_path))
+        logger.info('will execute test: "{}"'.format(testfile_path))
         ext_paths = [path for path in ext_paths]  # accept iterator, etc.
         # `_escape_path` only applied to  `testfile_path`:
         #     Built-in `open` never accepts unescaped special characters,
@@ -421,7 +421,7 @@ class TestRunner(object):
         with PathEnvironment(ext_paths=ext_paths) as env:
             suites = []
             for testfile_path in testfile_paths:
-                logger.info('load test suites from: {}'.format(testfile_path))
+                logger.info('load test suites from: "{}"'.format(testfile_path))
                 test_module = _get_module_from_path(testfile_path, env)
                 suites.append(loader.loadTestsFromModule(test_module))
             aggregated = unittest.TestSuite(suites)
@@ -495,7 +495,7 @@ def execute():
     args = parser.parse_args()
     target = args.target_script
     if not os.path.exists(target):
-        logger.error('target script not found: {}'.format(target))
+        logger.error('target script not found: "{}"'.format(target))
         return
     # Execute target.
     kwargs = {}
