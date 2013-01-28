@@ -118,6 +118,10 @@ If you want to set multiple paths, separate with ';' like::
 
     extdirs=./sitelib1;./sitelib2;...
 
+You can check your configuration via::
+
+    $ ipy ipyenv.py showconfig
+
 Further information
 -------------------
 
